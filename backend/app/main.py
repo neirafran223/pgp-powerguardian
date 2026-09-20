@@ -5,6 +5,9 @@ from app.core.security import get_current_user
 from app.schemas.usuario import UsuarioResponse
 from app.routers import equipos
 from app.routers import parametros
+from app.routers import mediciones
+from app.routers import dashboard
+
 
 
 app = FastAPI(
@@ -16,6 +19,8 @@ app = FastAPI(
 app.include_router(auth.router)
 app.include_router(equipos.router)
 app.include_router(parametros.router)
+app.include_router(mediciones.router)
+app.include_router(dashboard.router)
 
 
 @app.get("/health")

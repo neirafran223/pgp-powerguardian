@@ -5,10 +5,10 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: "[PASSWORD]"
+      POSTGRES_PASSWORD: Anyelina.1
       POSTGRES_DB: pgp_db
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgp_db_data:/var/lib/postgresql/data
 
