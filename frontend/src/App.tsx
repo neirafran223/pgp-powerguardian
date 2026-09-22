@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Equipos from "./pages/Equipos";
+import Graficos from "./pages/Graficos";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 export default function App() {
@@ -24,6 +25,15 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/graficos"
+        element={
+          <ProtectedRoute>
+            <Graficos />
+          </ProtectedRoute>
+        }
+      />
+
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );

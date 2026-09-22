@@ -68,9 +68,7 @@ export default function Equipos() {
       {/* Header */}
       <header className="flex items-center justify-between px-8 py-4 border-b border-white/10">
         <div className="flex items-center gap-6">
-          <h1 className="text-xl font-bold tracking-wide">
-            PowerGuardian Pro
-          </h1>
+          <h1 className="text-xl font-bold tracking-wide">PowerGuardian Pro</h1>
           <nav className="flex gap-4 text-sm">
             <button
               onClick={() => navigate("/dashboard")}
@@ -78,9 +76,15 @@ export default function Equipos() {
             >
               Dashboard
             </button>
-            <span className="text-white font-semibold border-b border-blue-400 pb-1">
+            <span className="text-blue-400 font-semibold border-b border-blue-400 pb-1">
               Equipos
             </span>
+            <button
+              onClick={() => navigate("/graficos")}
+              className="text-blue-300 hover:text-white transition cursor-pointer"
+            >
+              Graficos
+            </button>
           </nav>
         </div>
         <button
@@ -88,6 +92,12 @@ export default function Equipos() {
           className="px-4 py-2 text-sm bg-white/10 hover:bg-white/20 rounded-lg transition cursor-pointer"
         >
           Cerrar Sesion
+        </button>
+        <button
+          onClick={() => navigate("/graficos")}
+          className="text-blue-300 hover:text-white transition cursor-pointer"
+        >
+          Graficos
         </button>
       </header>
 
@@ -131,9 +141,7 @@ export default function Equipos() {
                 <input
                   type="text"
                   value={form.nombre}
-                  onChange={(e) =>
-                    setForm({ ...form, nombre: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, nombre: e.target.value })}
                   className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-blue-400 transition text-sm"
                   placeholder="Panel Solar Planta Norte"
                   required
@@ -174,9 +182,7 @@ export default function Equipos() {
                 </label>
                 <select
                   value={form.estado}
-                  onChange={(e) =>
-                    setForm({ ...form, estado: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, estado: e.target.value })}
                   className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-blue-400 transition text-sm"
                 >
                   <option value="activo" className="bg-slate-900">
