@@ -7,6 +7,7 @@ from app.routers import equipos
 from app.routers import parametros
 from app.routers import mediciones
 from app.routers import dashboard
+from app.routers import incidencias
 
 
 
@@ -21,6 +22,7 @@ app.include_router(equipos.router)
 app.include_router(parametros.router)
 app.include_router(mediciones.router)
 app.include_router(dashboard.router)
+app.include_router(incidencias.router)
 
 
 @app.get("/health")

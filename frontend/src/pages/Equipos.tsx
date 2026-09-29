@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
+import Layout from "../components/Layout";
 
 interface Equipo {
   id: number;
@@ -31,11 +32,6 @@ export default function Equipos() {
   });
   const navigate = useNavigate();
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
-  };
-
   const fetchEquipos = () => {
     api
       .get("/equipos/")
@@ -63,196 +59,165 @@ export default function Equipos() {
     }
   };
 
+  const estadoBadge = (estado: string) => {
+    if (estado === "activo") return "pgp-badge pgp-badge-ok";
+    if (estado === "mantencion") return "pgp-badge pgp-badge-warn";
+    return "pgp-badge pgp-badge-err";
+  };
+
+  const inputStyle = {
+    width: "100%",
+    padding: "6px 10px",
+    background: "var(--bg-deep)",
+    border: "1px solid var(--border)",
+    borderRadius: "4px",
+    color: "var(--txt1)",
+    fontSize: "10px",
+    outline: "none",
+    fontFamily: "inherit",
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white">
-      {/* Header */}
-      <header className="flex items-center justify-between px-8 py-4 border-b border-white/10">
-        <div className="flex items-center gap-6">
-          <h1 className="text-xl font-bold tracking-wide">PowerGuardian Pro</h1>
-          <nav className="flex gap-4 text-sm">
-            <button
-              onClick={() => navigate("/dashboard")}
-              className="text-blue-300 hover:text-white transition cursor-pointer"
-            >
-              Dashboard
-            </button>
-            <span className="text-blue-400 font-semibold border-b border-blue-400 pb-1">
-              Equipos
-            </span>
-            <button
-              onClick={() => navigate("/graficos")}
-              className="text-blue-300 hover:text-white transition cursor-pointer"
-            >
-              Graficos
-            </button>
-          </nav>
-        </div>
-        <button
-          onClick={logout}
-          className="px-4 py-2 text-sm bg-white/10 hover:bg-white/20 rounded-lg transition cursor-pointer"
-        >
-          Cerrar Sesion
-        </button>
-        <button
-          onClick={() => navigate("/graficos")}
-          className="text-blue-300 hover:text-white transition cursor-pointer"
-        >
-          Graficos
-        </button>
-      </header>
+    <Layout>
+      <div className="pgp-fade-in" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        {error && <div className="pgp-alert pgp-alert-err">{error}</div>}
+        {success && <div className="pgp-alert pgp-alert-ok">{success}</div>}
 
-      <main className="max-w-6xl mx-auto p-8">
-        {error && (
-          <div className="bg-red-500/20 border border-red-500/50 text-red-300 px-4 py-2 rounded-lg mb-4 text-sm">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="bg-green-500/20 border border-green-500/50 text-green-300 px-4 py-2 rounded-lg mb-4 text-sm">
-            {success}
-          </div>
-        )}
-
-        {/* Header + boton crear */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-blue-300">
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <span style={{ fontSize: "9px", color: "var(--accent)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px" }}>
             Gestion de Equipos
-          </h2>
+          </span>
           <button
             onClick={() => setShowForm(!showForm)}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-sm font-semibold rounded-lg transition cursor-pointer"
+            style={{
+              padding: "5px 14px",
+              background: showForm ? "transparent" : "linear-gradient(135deg, var(--accent), var(--accent2))",
+              border: showForm ? "1px solid var(--border2)" : "none",
+              borderRadius: "4px",
+              color: showForm ? "var(--txt2)" : "var(--bg-deep)",
+              fontSize: "9px",
+              cursor: "pointer",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.3px",
+            }}
           >
             {showForm ? "Cancelar" : "Nuevo Equipo"}
           </button>
+          <span style={{ marginLeft: "auto", fontSize: "9px", color: "var(--txt3)" }}>
+            {equipos.length} equipo(s) registrado(s)
+          </span>
         </div>
 
-        {/* Formulario crear */}
         {showForm && (
-          <form
-            onSubmit={handleSubmit}
-            className="bg-white/5 border border-white/10 rounded-xl p-6 mb-6"
-          >
-            <h3 className="text-md font-semibold mb-4">Crear Nuevo Equipo</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="pgp-card">
+            <div className="pgp-card-title">Crear Nuevo Equipo</div>
+            <div className="pgp-grid-2" style={{ gap: "10px" }}>
               <div>
-                <label className="block text-blue-200 text-sm mb-1">
+                <label style={{ fontSize: "8px", color: "var(--txt3)", display: "block", marginBottom: "3px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
                   Nombre
                 </label>
                 <input
                   type="text"
                   value={form.nombre}
                   onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-blue-400 transition text-sm"
+                  style={inputStyle}
                   placeholder="Panel Solar Planta Norte"
                   required
                 />
               </div>
               <div>
-                <label className="block text-blue-200 text-sm mb-1">
+                <label style={{ fontSize: "8px", color: "var(--txt3)", display: "block", marginBottom: "3px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
                   Ubicacion
                 </label>
                 <input
                   type="text"
                   value={form.ubicacion}
-                  onChange={(e) =>
-                    setForm({ ...form, ubicacion: e.target.value })
-                  }
-                  className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-blue-400 transition text-sm"
+                  onChange={(e) => setForm({ ...form, ubicacion: e.target.value })}
+                  style={inputStyle}
                   placeholder="Santiago, Chile"
                 />
               </div>
               <div>
-                <label className="block text-blue-200 text-sm mb-1">
+                <label style={{ fontSize: "8px", color: "var(--txt3)", display: "block", marginBottom: "3px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
                   Cliente ID
                 </label>
                 <input
                   type="number"
                   value={form.cliente_id}
-                  onChange={(e) =>
-                    setForm({ ...form, cliente_id: Number(e.target.value) })
-                  }
+                  onChange={(e) => setForm({ ...form, cliente_id: Number(e.target.value) })}
                   min={1}
-                  className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-blue-400 transition text-sm"
+                  style={{ ...inputStyle, fontFamily: "Consolas, monospace" }}
                   required
                 />
               </div>
               <div>
-                <label className="block text-blue-200 text-sm mb-1">
+                <label style={{ fontSize: "8px", color: "var(--txt3)", display: "block", marginBottom: "3px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
                   Estado
                 </label>
                 <select
                   value={form.estado}
                   onChange={(e) => setForm({ ...form, estado: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-blue-400 transition text-sm"
+                  style={{ ...inputStyle, cursor: "pointer" }}
                 >
-                  <option value="activo" className="bg-slate-900">
-                    Activo
-                  </option>
-                  <option value="inactivo" className="bg-slate-900">
-                    Inactivo
-                  </option>
-                  <option value="mantencion" className="bg-slate-900">
-                    En Mantencion
-                  </option>
+                  <option value="activo" style={{ background: "var(--bg-deep)" }}>Activo</option>
+                  <option value="inactivo" style={{ background: "var(--bg-deep)" }}>Inactivo</option>
+                  <option value="mantencion" style={{ background: "var(--bg-deep)" }}>En Mantencion</option>
                 </select>
               </div>
             </div>
             <button
               type="submit"
-              className="mt-4 px-6 py-2 bg-blue-600 hover:bg-blue-500 text-sm font-semibold rounded-lg transition cursor-pointer"
+              style={{
+                marginTop: "10px",
+                padding: "7px 20px",
+                background: "linear-gradient(135deg, var(--accent), var(--accent2))",
+                border: "none",
+                borderRadius: "4px",
+                color: "var(--bg-deep)",
+                fontSize: "9px",
+                cursor: "pointer",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.4px",
+              }}
             >
               Crear Equipo
             </button>
           </form>
         )}
 
-        {/* Tabla de equipos */}
-        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
+        {/* Tabla */}
+        <div className="pgp-card" style={{ padding: 0, overflow: "hidden" }}>
+          <table className="pgp-table">
             <thead>
-              <tr className="border-b border-white/10 text-blue-300 text-left">
-                <th className="px-6 py-3 font-medium">ID</th>
-                <th className="px-6 py-3 font-medium">Nombre</th>
-                <th className="px-6 py-3 font-medium">Ubicacion</th>
-                <th className="px-6 py-3 font-medium">Estado</th>
-                <th className="px-6 py-3 font-medium">Fecha Registro</th>
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Ubicacion</th>
+                <th>Estado</th>
+                <th>Fecha Registro</th>
               </tr>
             </thead>
             <tbody>
               {equipos.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={5}
-                    className="px-6 py-8 text-center text-white/40"
-                  >
+                  <td colSpan={5} style={{ textAlign: "center", padding: "30px", color: "var(--txt3)" }}>
                     No hay equipos registrados
                   </td>
                 </tr>
               ) : (
                 equipos.map((eq) => (
-                  <tr
-                    key={eq.id}
-                    className="border-b border-white/5 hover:bg-white/5 transition"
-                  >
-                    <td className="px-6 py-3 font-mono">{eq.id}</td>
-                    <td className="px-6 py-3">{eq.nombre}</td>
-                    <td className="px-6 py-3 text-white/60">
-                      {eq.ubicacion || "-"}
-                    </td>
-                    <td className="px-6 py-3">
-                      <span
-                        className={`text-xs px-2 py-1 rounded-full ${
-                          eq.estado === "activo"
-                            ? "bg-green-500/20 text-green-300"
-                            : eq.estado === "mantencion"
-                              ? "bg-yellow-500/20 text-yellow-300"
-                              : "bg-red-500/20 text-red-300"
-                        }`}
-                      >
-                        {eq.estado}
+                  <tr key={eq.id}>
+                    <td className="mono">{eq.id}</td>
+                    <td style={{ color: "var(--txt1)", fontWeight: 600 }}>{eq.nombre}</td>
+                    <td>{eq.ubicacion || "-"}</td>
+                    <td>
+                      <span className={estadoBadge(eq.estado)}>
+                        {eq.estado.toUpperCase()}
                       </span>
                     </td>
-                    <td className="px-6 py-3 text-white/60">
+                    <td style={{ fontSize: "9px" }}>
                       {new Date(eq.fecha_registro).toLocaleDateString("es-CL")}
                     </td>
                   </tr>
@@ -261,7 +226,7 @@ export default function Equipos() {
             </tbody>
           </table>
         </div>
-      </main>
-    </div>
+      </div>
+    </Layout>
   );
 }

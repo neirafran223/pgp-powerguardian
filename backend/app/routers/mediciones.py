@@ -7,6 +7,7 @@ from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.medicion import Medicion
 from app.schemas.medicion import MedicionCreate, MedicionResponse
+from app.services.detector_anomalias import detectar_anomalias
 
 router = APIRouter(prefix="/mediciones", tags=["Mediciones"])
 
@@ -16,6 +17,7 @@ def ingestar_medicion(data: MedicionCreate, db: Session = Depends(get_db),user=D
     nueva = Medicion(**data.model_dump())
     db.add(nueva)
     db.commit()
+    detectar_anomalias(db, data.equipo_id, nueva)
     db.refresh(nueva)
     return nueva
 

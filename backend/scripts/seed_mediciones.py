@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 BASE_URL = "http://127.0.0.1:8000"
 
-# 1. Login para obtener token
+# 1. Login
 print("Haciendo login...")
 login = requests.post(f"{BASE_URL}/auth/login", data={
     "username": "admin@pgp.cl",
@@ -17,61 +17,80 @@ if login.status_code != 200:
 
 token = login.json()["access_token"]
 headers = {"Authorization": f"Bearer {token}"}
-print(f"Token obtenido OK")
+print("Token obtenido OK")
 
-# 2. Verificar que existe equipo 1
-equipo = requests.get(f"{BASE_URL}/equipos/2", headers=headers)
-if equipo.status_code != 200:
-    print("No existe equipo con ID 1. Crealo primero desde el frontend.")
-    exit(1)
+# 2. Configurar parametros (umbrales)
+print("Configurando umbrales...")
+params = {
+    "equipo_id": 2,
+    "voltaje_max": 240,
+    "voltaje_min": 210,
+    "thd_max": 5.0,
+    "corriente_max": 100,
+    "factor_potencia_min": 0.90,
+    "frecuencia_nominal": 50
+}
+r = requests.post(f"{BASE_URL}/parametros/", json=params, headers=headers)
+if r.status_code in [200, 201]:
+    print("Parametros creados OK")
+else:
+    print(f"Parametros ya existen o error: {r.status_code}")
 
-print(f"Equipo encontrado: {equipo.json()['nombre']}")
-
-# 3. Ingestar 50 mediciones simuladas (ultimas 24 horas)
-print("Ingresando 50 mediciones simuladas...")
-now = datetime.utcnow()
-exitos = 0
-errores = 0
+# 3. Enviar mediciones normales + anomalas
+print("Enviando mediciones...")
+base_time = datetime.now() - timedelta(hours=2)
+creadas = 0
+anomalas = 0
 
 for i in range(50):
-    ts = now - timedelta(minutes=30 * (50 - i))
-    medicion = {
-        "equipo_id": 2,
-        "timestamp": ts.isoformat() + "Z",
-        "voltaje_l1": round(random.uniform(215, 235), 2),
-        "voltaje_l2": round(random.uniform(215, 235), 2),
-        "voltaje_l3": round(random.uniform(215, 235), 2),
-        "corriente_l1": round(random.uniform(10, 25), 2),
-        "corriente_l2": round(random.uniform(10, 25), 2),
-        "corriente_l3": round(random.uniform(10, 25), 2),
-        "thd": round(random.uniform(1.5, 8.0), 2),
-        "frecuencia": round(random.uniform(49.8, 50.2), 2),
-        "factor_potencia": round(random.uniform(0.85, 0.99), 3),
-        "temperatura_gabinete": round(random.uniform(22, 38), 2),
-        "estado_medicion": "normal" if random.random() > 0.1 else "alerta"
-    }
+    ts = base_time + timedelta(minutes=i * 2)
 
-    res = requests.post(f"{BASE_URL}/mediciones/", json=medicion, headers=headers)
-    if res.status_code == 201:
-        exitos += 1
+    if i < 35:
+        # Mediciones normales
+        medicion = {
+            "equipo_id": 2,
+            "timestamp": ts.isoformat(),
+            "voltaje_l1": round(random.uniform(218, 232), 1),
+            "voltaje_l2": round(random.uniform(218, 232), 1),
+            "voltaje_l3": round(random.uniform(218, 232), 1),
+            "corriente_l1": round(random.uniform(40, 80), 1),
+            "corriente_l2": round(random.uniform(40, 80), 1),
+            "corriente_l3": round(random.uniform(40, 80), 1),
+            "thd": round(random.uniform(2.0, 4.5), 1),
+            "frecuencia": round(random.uniform(49.9, 50.1), 2),
+            "factor_potencia": round(random.uniform(0.92, 0.98), 2),
+            "temperatura_gabinete": round(random.uniform(30, 45), 1),
+            "estado_medicion": "normal"
+        }
     else:
-        errores += 1
-        print(f"  Error en medicion {i+1}: {res.text}")
+        # Mediciones con anomalias
+        medicion = {
+            "equipo_id": 2,
+            "timestamp": ts.isoformat(),
+            "voltaje_l1": round(random.uniform(245, 260), 1),
+            "voltaje_l2": round(random.uniform(245, 260), 1),
+            "voltaje_l3": round(random.uniform(200, 208), 1),
+            "corriente_l1": round(random.uniform(105, 130), 1),
+            "corriente_l2": round(random.uniform(40, 80), 1),
+            "corriente_l3": round(random.uniform(40, 80), 1),
+            "thd": round(random.uniform(6.0, 12.0), 1),
+            "frecuencia": round(random.uniform(49.8, 50.2), 2),
+            "factor_potencia": round(random.uniform(0.75, 0.88), 2),
+            "temperatura_gabinete": round(random.uniform(50, 65), 1),
+            "estado_medicion": "anomalia"
+        }
+        anomalas += 1
 
-print(f"\nResultado: {exitos} exitosas, {errores} errores")
+    r = requests.post(f"{BASE_URL}/mediciones/", json=medicion, headers=headers)
+    if r.status_code in [200, 201]:
+        creadas += 1
 
-# 4. Verificar dashboard
-print("\nVerificando dashboard...")
-dashboard = requests.get(f"{BASE_URL}/dashboard/resumen/2", headers=headers)
-if dashboard.status_code == 200:
-    data = dashboard.json()
-    print(f"  Equipo: {data['equipo']['nombre']}")
-    print(f"  Total mediciones: {data['total_mediciones']}")
-    ultima = data['ultima_medicion']
-    if ultima['timestamp']:
-        print(f"  Ultima medicion: {ultima['timestamp']}")
-        print(f"  Voltaje L1: {ultima['voltaje_l1']} V")
-        print(f"  THD: {ultima['thd']} %")
-        print(f"  Frecuencia: {ultima['frecuencia']} Hz")
+print(f"Mediciones creadas: {creadas} ({anomalas} con anomalias)")
 
-print("\nPrueba de ingesta completada!")
+# 4. Verificar incidencias generadas
+r = requests.get(f"{BASE_URL}/incidencias/activas/count", headers=headers)
+print(f"Incidencias activas: {r.json()}")
+
+r = requests.get(f"{BASE_URL}/incidencias/?estado=activa", headers=headers)
+for inc in r.json()[:5]:
+    print(f"  [{inc['nivel']}] {inc['tipo']}: {inc['descripcion']}")

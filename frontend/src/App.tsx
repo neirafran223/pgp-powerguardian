@@ -4,6 +4,7 @@ import Dashboard from "./pages/Dashboard";
 import Equipos from "./pages/Equipos";
 import Graficos from "./pages/Graficos";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Incidencias from "./pages/Incidencias";
 
 export default function App() {
   return (
@@ -30,6 +31,15 @@ export default function App() {
         element={
           <ProtectedRoute>
             <Graficos />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/incidencias"
+        element={
+          <ProtectedRoute>
+            <Incidencias />
           </ProtectedRoute>
         }
       />
