@@ -10,12 +10,12 @@ Sistema inteligente de monitoreo y diagnostico de calidad de energia electrica p
 
 Antes de comenzar, asegurate de tener instalado:
 
-| Software | Version minima | Descarga |
-|:---------|:---------------|:---------|
-| **Python** | 3.11+ | https://www.python.org/downloads/ |
-| **Node.js** | 18+ | https://nodejs.org/ |
-| **Docker Desktop** | 4.0+ | https://www.docker.com/products/docker-desktop/ |
-| **Git** | 2.40+ | https://git-scm.com/ |
+| Software           | Version minima | Descarga                                        |
+| :----------------- | :------------- | :---------------------------------------------- |
+| **Python**         | 3.11+          | https://www.python.org/downloads/               |
+| **Node.js**        | 18+            | https://nodejs.org/                             |
+| **Docker Desktop** | 4.0+           | https://www.docker.com/products/docker-desktop/ |
+| **Git**            | 2.40+          | https://git-scm.com/                            |
 
 ---
 
@@ -37,10 +37,11 @@ docker-compose up -d
 ```
 
 Esto levanta un contenedor llamado `pgp_db` con:
+
 - **Puerto:** 5433 (mapeado al 5432 interno)
 - **Base de datos:** pgp_db
 - **Usuario:** postgres
-- **Password:** Anyelina.1
+- **Password:** [PASSWORD]
 - **Volumen:** pgp_db_data (persistente)
 
 Para verificar que esta corriendo:
@@ -65,16 +66,19 @@ python -m venv venv
 ### 3.2 Activar entorno virtual
 
 **Windows (PowerShell):**
+
 ```powershell
 venv\Scripts\Activate.ps1
 ```
 
 **Windows (CMD):**
+
 ```cmd
 venv\Scripts\activate.bat
 ```
 
 **Linux/Mac:**
+
 ```bash
 source venv/bin/activate
 ```
@@ -90,7 +94,7 @@ pip install -r requirements.txt
 El archivo `backend/.env` debe contener:
 
 ```env
-DATABASE_URL=postgresql://postgres:Anyelina.1@localhost:5433/pgp_db
+DATABASE_URL=postgresql://postgres:[PASSWORD]@localhost:5433/pgp_db
 
 SECRET_KEY=ClaveUltraSecretaParaProyectoCapstonePoweGuardian
 ALGORITHM=HS256
@@ -116,6 +120,7 @@ uvicorn app.main:app --reload
 El backend quedara disponible en `http://127.0.0.1:8000`.
 
 Para verificar:
+
 - Abrir `http://127.0.0.1:8000/health` — debe responder `{"status": "ok", "version": "0.1.0"}`
 - Documentacion Swagger: `http://127.0.0.1:8000/docs`
 
@@ -175,6 +180,7 @@ python scripts/seed_mediciones.py
 ```
 
 Esto crea:
+
 - Parametros de umbrales para el equipo
 - 50 mediciones (35 normales + 15 con anomalias)
 - Incidencias detectadas automaticamente
@@ -242,44 +248,44 @@ pgp-powerguardian/
 
 ## Endpoints de la API
 
-| Metodo | Ruta | Descripcion |
-|:------:|:-----|:------------|
-| GET | /health | Estado del servidor |
-| POST | /auth/register | Registrar usuario |
-| POST | /auth/login | Login (retorna JWT) |
-| GET | /me | Usuario autenticado |
-| GET | /equipos/ | Listar equipos |
-| POST | /equipos/ | Crear equipo |
-| GET | /parametros/{equipo_id} | Obtener config |
-| POST | /parametros/ | Crear config |
-| PUT | /parametros/{equipo_id} | Actualizar config |
-| GET | /mediciones/ | Listar mediciones (filtros) |
-| POST | /mediciones/ | Registrar medicion |
-| GET | /mediciones/ultima/{id} | Ultima medicion |
-| GET | /dashboard/estado-general | Resumen general |
-| GET | /dashboard/resumen/{id} | Resumen por equipo |
-| GET | /incidencias/ | Listar incidencias |
-| GET | /incidencias/activas/count | Contar alertas activas |
-| PUT | /incidencias/{id} | Actualizar estado |
+| Metodo | Ruta                       | Descripcion                 |
+| :----: | :------------------------- | :-------------------------- |
+|  GET   | /health                    | Estado del servidor         |
+|  POST  | /auth/register             | Registrar usuario           |
+|  POST  | /auth/login                | Login (retorna JWT)         |
+|  GET   | /me                        | Usuario autenticado         |
+|  GET   | /equipos/                  | Listar equipos              |
+|  POST  | /equipos/                  | Crear equipo                |
+|  GET   | /parametros/{equipo_id}    | Obtener config              |
+|  POST  | /parametros/               | Crear config                |
+|  PUT   | /parametros/{equipo_id}    | Actualizar config           |
+|  GET   | /mediciones/               | Listar mediciones (filtros) |
+|  POST  | /mediciones/               | Registrar medicion          |
+|  GET   | /mediciones/ultima/{id}    | Ultima medicion             |
+|  GET   | /dashboard/estado-general  | Resumen general             |
+|  GET   | /dashboard/resumen/{id}    | Resumen por equipo          |
+|  GET   | /incidencias/              | Listar incidencias          |
+|  GET   | /incidencias/activas/count | Contar alertas activas      |
+|  PUT   | /incidencias/{id}          | Actualizar estado           |
 
-Todos los endpoints (excepto /auth/* y /health) requieren JWT en header `Authorization: Bearer <token>`.
+Todos los endpoints (excepto /auth/\* y /health) requieren JWT en header `Authorization: Bearer <token>`.
 
 ---
 
 ## Stack Tecnologico
 
-| Capa | Tecnologia |
-|:-----|:-----------|
-| Backend | Python 3.11 + FastAPI |
-| ORM | SQLAlchemy 2.x |
-| Migraciones | Alembic |
+| Capa          | Tecnologia                  |
+| :------------ | :-------------------------- |
+| Backend       | Python 3.11 + FastAPI       |
+| ORM           | SQLAlchemy 2.x              |
+| Migraciones   | Alembic                     |
 | Base de datos | TimescaleDB (PostgreSQL 16) |
-| Contenedores | Docker + Docker Compose |
-| Frontend | React 19 + TypeScript |
-| Bundler | Vite 8 |
-| Estilos | TailwindCSS 4 + CSS custom |
-| Graficos | Recharts |
-| Autenticacion | JWT (python-jose) |
+| Contenedores  | Docker + Docker Compose     |
+| Frontend      | React 19 + TypeScript       |
+| Bundler       | Vite 8                      |
+| Estilos       | TailwindCSS 4 + CSS custom  |
+| Graficos      | Recharts                    |
+| Autenticacion | JWT (python-jose)           |
 
 ---
 
