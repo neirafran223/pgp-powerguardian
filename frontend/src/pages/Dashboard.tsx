@@ -507,21 +507,22 @@ export default function Dashboard() {
                       .reverse()
                       .map((m, i) => {
                         const d = new Date(m.timestamp);
-                        const ts = d.toLocaleString("es-CL", {
+                        const ts = d.toLocaleDateString("es-CL", {
                           day: "2-digit",
                           month: "2-digit",
+                        }) + " " + d.toLocaleTimeString("es-CL", {
                           hour: "2-digit",
                           minute: "2-digit",
                         });
                         return (
                           <tr key={i}>
                             <td style={{ fontSize: "9px", color: "var(--txt3)" }}>{ts}</td>
-                            <td className="mono">{m.voltaje_l1}</td>
-                            <td className="mono">{m.voltaje_l2}</td>
-                            <td className="mono">{m.voltaje_l3}</td>
-                            <td className="mono" style={{ color: thdColor(m.thd) }}>{m.thd}</td>
-                            <td className="mono">{m.frecuencia}</td>
-                            <td className="mono" style={{ color: fpColor(m.factor_potencia) }}>{m.factor_potencia}</td>
+                            <td className="mono">{Number(m.voltaje_l1).toFixed(1)}</td>
+                            <td className="mono">{Number(m.voltaje_l2).toFixed(1)}</td>
+                            <td className="mono">{Number(m.voltaje_l3).toFixed(1)}</td>
+                            <td className="mono" style={{ color: thdColor(m.thd) }}>{Number(m.thd).toFixed(1)}</td>
+                            <td className="mono">{Number(m.frecuencia).toFixed(2)}</td>
+                            <td className="mono" style={{ color: fpColor(m.factor_potencia) }}>{Number(m.factor_potencia).toFixed(2)}</td>
                           </tr>
                         );
                       })}

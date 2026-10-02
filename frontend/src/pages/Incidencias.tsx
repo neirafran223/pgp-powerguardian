@@ -119,8 +119,8 @@ export default function Incidencias() {
                     </div>
                     <p style={{ fontSize: "9.5px", color: "var(--txt2)", marginBottom: "4px", lineHeight: 1.4 }}>{inc.descripcion}</p>
                     <div style={{ display: "flex", gap: "16px", fontSize: "8.5px", color: "var(--txt3)" }}>
-                      <span>Medido: <span style={{ fontFamily: "Consolas, monospace", color: "var(--txt2)" }}>{inc.valor_medido}</span></span>
-                      <span>Umbral: <span style={{ fontFamily: "Consolas, monospace", color: "var(--txt2)" }}>{inc.umbral_config}</span></span>
+                      <span>Medido: <span style={{ fontFamily: "Consolas, monospace", color: "var(--txt2)" }}>{inc.valor_medido !== null ? Number(inc.valor_medido).toFixed(2) : "-"}</span></span>
+                      <span>Umbral: <span style={{ fontFamily: "Consolas, monospace", color: "var(--txt2)" }}>{inc.umbral_config !== null ? Number(inc.umbral_config).toFixed(2) : "-"}</span></span>
                       <span>{formatFecha(inc.timestamp)}</span>
                     </div>
                   </div>
