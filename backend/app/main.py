@@ -1,4 +1,5 @@
 from app.schemas.usuario import UsuarioResponse
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, Depends
 from app.routers import auth
 from app.core.security import get_current_user
@@ -24,6 +25,13 @@ app.include_router(mediciones.router)
 app.include_router(dashboard.router)
 app.include_router(incidencias.router)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Permite peticiones desde cualquier origen temporalmente
+    allow_credentials=True,
+    allow_methods=["*"],  # Permite todos los métodos HTTP (GET, POST, PUT, etc.)
+    allow_headers=["*"],  # Permite todos los encabezados
+)
 
 @app.get("/health")
 def health_check():
