@@ -42,7 +42,11 @@ export default function Graficos() {
 
   const formatTime = (ts: string) => {
     const d = new Date(ts);
-    return `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
+    const day = String(d.getDate()).padStart(2, "0");
+    const mon = String(d.getMonth() + 1).padStart(2, "0");
+    const hr = String(d.getHours()).padStart(2, "0");
+    const min = String(d.getMinutes()).padStart(2, "0");
+    return `${day}/${mon} ${hr}:${min}`;
   };
 
   const chartTooltipStyle = {
