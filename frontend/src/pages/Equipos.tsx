@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import Layout from "../components/Layout";
 
@@ -30,7 +29,7 @@ export default function Equipos() {
     ubicacion: "",
     estado: "activo",
   });
-  const navigate = useNavigate();
+  //const navigate = useNavigate();
 
   const fetchEquipos = () => {
     api
@@ -79,19 +78,32 @@ export default function Equipos() {
 
   return (
     <Layout>
-      <div className="pgp-fade-in" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+      <div
+        className="pgp-fade-in"
+        style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+      >
         {error && <div className="pgp-alert pgp-alert-err">{error}</div>}
         {success && <div className="pgp-alert pgp-alert-ok">{success}</div>}
 
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <span style={{ fontSize: "9px", color: "var(--accent)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px" }}>
+          <span
+            style={{
+              fontSize: "9px",
+              color: "var(--accent)",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.8px",
+            }}
+          >
             Gestion de Equipos
           </span>
           <button
             onClick={() => setShowForm(!showForm)}
             style={{
               padding: "5px 14px",
-              background: showForm ? "transparent" : "linear-gradient(135deg, var(--accent), var(--accent2))",
+              background: showForm
+                ? "transparent"
+                : "linear-gradient(135deg, var(--accent), var(--accent2))",
               border: showForm ? "1px solid var(--border2)" : "none",
               borderRadius: "4px",
               color: showForm ? "var(--txt2)" : "var(--bg-deep)",
@@ -104,7 +116,13 @@ export default function Equipos() {
           >
             {showForm ? "Cancelar" : "Nuevo Equipo"}
           </button>
-          <span style={{ marginLeft: "auto", fontSize: "9px", color: "var(--txt3)" }}>
+          <span
+            style={{
+              marginLeft: "auto",
+              fontSize: "9px",
+              color: "var(--txt3)",
+            }}
+          >
             {equipos.length} equipo(s) registrado(s)
           </span>
         </div>
@@ -114,7 +132,16 @@ export default function Equipos() {
             <div className="pgp-card-title">Crear Nuevo Equipo</div>
             <div className="pgp-grid-2" style={{ gap: "10px" }}>
               <div>
-                <label style={{ fontSize: "8px", color: "var(--txt3)", display: "block", marginBottom: "3px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                <label
+                  style={{
+                    fontSize: "8px",
+                    color: "var(--txt3)",
+                    display: "block",
+                    marginBottom: "3px",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                  }}
+                >
                   Nombre
                 </label>
                 <input
@@ -127,32 +154,63 @@ export default function Equipos() {
                 />
               </div>
               <div>
-                <label style={{ fontSize: "8px", color: "var(--txt3)", display: "block", marginBottom: "3px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                <label
+                  style={{
+                    fontSize: "8px",
+                    color: "var(--txt3)",
+                    display: "block",
+                    marginBottom: "3px",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                  }}
+                >
                   Ubicacion
                 </label>
                 <input
                   type="text"
                   value={form.ubicacion}
-                  onChange={(e) => setForm({ ...form, ubicacion: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, ubicacion: e.target.value })
+                  }
                   style={inputStyle}
                   placeholder="Santiago, Chile"
                 />
               </div>
               <div>
-                <label style={{ fontSize: "8px", color: "var(--txt3)", display: "block", marginBottom: "3px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                <label
+                  style={{
+                    fontSize: "8px",
+                    color: "var(--txt3)",
+                    display: "block",
+                    marginBottom: "3px",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                  }}
+                >
                   Cliente ID
                 </label>
                 <input
                   type="number"
                   value={form.cliente_id}
-                  onChange={(e) => setForm({ ...form, cliente_id: Number(e.target.value) })}
+                  onChange={(e) =>
+                    setForm({ ...form, cliente_id: Number(e.target.value) })
+                  }
                   min={1}
                   style={{ ...inputStyle, fontFamily: "Consolas, monospace" }}
                   required
                 />
               </div>
               <div>
-                <label style={{ fontSize: "8px", color: "var(--txt3)", display: "block", marginBottom: "3px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                <label
+                  style={{
+                    fontSize: "8px",
+                    color: "var(--txt3)",
+                    display: "block",
+                    marginBottom: "3px",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                  }}
+                >
                   Estado
                 </label>
                 <select
@@ -160,9 +218,24 @@ export default function Equipos() {
                   onChange={(e) => setForm({ ...form, estado: e.target.value })}
                   style={{ ...inputStyle, cursor: "pointer" }}
                 >
-                  <option value="activo" style={{ background: "var(--bg-deep)" }}>Activo</option>
-                  <option value="inactivo" style={{ background: "var(--bg-deep)" }}>Inactivo</option>
-                  <option value="mantencion" style={{ background: "var(--bg-deep)" }}>En Mantencion</option>
+                  <option
+                    value="activo"
+                    style={{ background: "var(--bg-deep)" }}
+                  >
+                    Activo
+                  </option>
+                  <option
+                    value="inactivo"
+                    style={{ background: "var(--bg-deep)" }}
+                  >
+                    Inactivo
+                  </option>
+                  <option
+                    value="mantencion"
+                    style={{ background: "var(--bg-deep)" }}
+                  >
+                    En Mantencion
+                  </option>
                 </select>
               </div>
             </div>
@@ -171,7 +244,8 @@ export default function Equipos() {
               style={{
                 marginTop: "10px",
                 padding: "7px 20px",
-                background: "linear-gradient(135deg, var(--accent), var(--accent2))",
+                background:
+                  "linear-gradient(135deg, var(--accent), var(--accent2))",
                 border: "none",
                 borderRadius: "4px",
                 color: "var(--bg-deep)",
@@ -202,7 +276,14 @@ export default function Equipos() {
             <tbody>
               {equipos.length === 0 ? (
                 <tr>
-                  <td colSpan={5} style={{ textAlign: "center", padding: "30px", color: "var(--txt3)" }}>
+                  <td
+                    colSpan={5}
+                    style={{
+                      textAlign: "center",
+                      padding: "30px",
+                      color: "var(--txt3)",
+                    }}
+                  >
                     No hay equipos registrados
                   </td>
                 </tr>
@@ -210,7 +291,9 @@ export default function Equipos() {
                 equipos.map((eq) => (
                   <tr key={eq.id}>
                     <td className="mono">{eq.id}</td>
-                    <td style={{ color: "var(--txt1)", fontWeight: 600 }}>{eq.nombre}</td>
+                    <td style={{ color: "var(--txt1)", fontWeight: 600 }}>
+                      {eq.nombre}
+                    </td>
                     <td>{eq.ubicacion || "-"}</td>
                     <td>
                       <span className={estadoBadge(eq.estado)}>
