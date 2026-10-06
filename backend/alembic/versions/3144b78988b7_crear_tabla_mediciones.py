@@ -35,8 +35,8 @@ def upgrade() -> None:
         sa.Column('estado_medicion', sa.String(20)),
         sa.PrimaryKeyConstraint('timestamp', 'equipo_id')
     )
-    op.execute("CREATE EXTENSION IF NOT EXISTS timescaledb;")
-    op.execute("SELECT create_hypertable('mediciones', 'timestamp');")
+    #op.execute("CREATE EXTENSION IF NOT EXISTS timescaledb;")
+    #op.execute("SELECT create_hypertable('mediciones', 'timestamp');")
 
 
 def downgrade() -> None:
