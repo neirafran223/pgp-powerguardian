@@ -6,6 +6,7 @@ from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.incidencia import Incidencia
 from app.schemas.incidencias import IncidenciaOut, IncidenciaUpdate
+from app.services.en_vivo import publicar
 
 router = APIRouter(prefix="/incidencias", tags=["Incidencias"])
 
@@ -55,9 +56,10 @@ def actualizar_estado(
         raise HTTPException(status_code=404, detail="Incidencia no encontrada")
 
     if datos.estado not in ["activa", "reconocida", "resuelta"]:
-        raise HTTPException(status_code=400, detail="Estado invalido")
+        raise HTTPException(status_code=400, detail="Estado inválido")
 
     inc.estado = datos.estado
     db.commit()
     db.refresh(inc)
+    publicar("incidencia", {"equipo_id": inc.equipo_id, "nuevas": 0})
     return inc

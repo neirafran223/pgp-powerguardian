@@ -36,7 +36,8 @@ def resumen_equipo(equipo_id: int, db: Session = Depends(get_db), user=Depends(g
             "voltaje_l3": ultima.voltaje_l3 if ultima else None,
             "thd": ultima.thd if ultima else None,
             "frecuencia": ultima.frecuencia if ultima else None,
-            "factor_potencia": ultima.factor_potencia if ultima else None
+            "factor_potencia": ultima.factor_potencia if ultima else None,
+            "temperatura_gabinete": ultima.temperatura_gabinete if ultima else None
         }
     }
 

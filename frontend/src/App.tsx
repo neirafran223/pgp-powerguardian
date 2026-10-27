@@ -5,6 +5,11 @@ import Equipos from "./pages/Equipos";
 import Graficos from "./pages/Graficos";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Incidencias from "./pages/Incidencias";
+import FormaOnda from "./pages/FormaOnda";
+import ParametrosElectricos from "./pages/ParametrosElectricos";
+import Armonicos from "./pages/Armonicos";
+import Compensacion from "./pages/Compensacion";
+import Cortocircuito from "./pages/Cortocircuito";
 
 export default function App() {
   return (
@@ -31,6 +36,47 @@ export default function App() {
         element={
           <ProtectedRoute>
             <Graficos />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/parametros-electricos"
+        element={
+          <ProtectedRoute>
+            <ParametrosElectricos />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/armonicos"
+        element={
+          <ProtectedRoute>
+            <Armonicos />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/compensacion"
+        element={
+          <ProtectedRoute>
+            <Compensacion />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/cortocircuito"
+        element={
+          <ProtectedRoute>
+            <Cortocircuito />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/forma-onda"
+        element={
+          <ProtectedRoute>
+            <FormaOnda />
           </ProtectedRoute>
         }
       />

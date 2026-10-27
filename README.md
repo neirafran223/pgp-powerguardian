@@ -111,6 +111,8 @@ alembic upgrade head
 
 Esto crea las 5 tablas: `clientes`, `usuarios`, `equipos`, `parametros_config`, `mediciones` (hypertable) e `incidencias`.
 
+Tambien activa una politica de retencion de TimescaleDB: las `mediciones` de mas de 7 dias se borran automaticamente (un job diario). Las `incidencias` se conservan.
+
 ### 3.6 Iniciar el backend
 
 ```bash
@@ -153,16 +155,37 @@ El proxy de Vite redirige las llamadas `/api/*` al backend en el puerto 8000 aut
 
 ### 5.1 Registrar un usuario
 
-Desde Postman, Swagger (`/docs`), o curl:
+Desde Postman, Swagger (`/docs`) o la terminal. El esquema requiere enviar también el campo `rol`.
+
+**PowerShell:**
+
+```powershell
+$body = @{
+    email = "admin@pgp.cl"
+    password = "admin123"
+    nombre = "Administrador"
+    rol = "admin"
+    cliente_id = 1
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://127.0.0.1:8000/auth/register" `
+    -Method Post `
+    -ContentType "application/json" `
+    -Body $body
+```
+
+Reemplaza `cliente_id` por el ID devuelto al crear el cliente.
+
+**Linux/macOS o Git Bash:**
 
 ```bash
-curl -X POST http://127.0.0.1:8000/auth/register -H "Content-Type: application/json" -d "{\"email\": \"admin@pgp.cl\", \"password\": \"admin123\", \"nombre\": \"Administrador\", \"cliente_id\": 1}"
+curl -X POST http://127.0.0.1:8000/auth/register -H "Content-Type: application/json" -d '{"email": "admin@pgp.cl", "password": "admin123", "nombre": "Administrador", "rol": "admin", "cliente_id": 1}'
 ```
 
 **Nota:** Primero necesitas crear un cliente en la BD. Puedes hacerlo via SQL:
 
 ```sql
-INSERT INTO clientes (nombre, rut, direccion) VALUES ('INDUC TECH', '76.xxx.xxx-x', 'Antofagasta, Chile');
+INSERT INTO clientes (nombre) VALUES ('INDUC TECH') RETURNING id;
 ```
 
 ### 5.2 Crear un equipo desde el frontend

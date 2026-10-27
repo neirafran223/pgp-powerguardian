@@ -8,10 +8,22 @@ from app.routers import parametros
 from app.routers import mediciones
 from app.routers import dashboard
 from app.routers import incidencias
+from app.routers import en_vivo
+import asyncio
+from contextlib import asynccontextmanager
+from app.services.en_vivo import loop_simulador
 
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    tarea = asyncio.create_task(loop_simulador())
+    yield
+    tarea.cancel()
 
 
 app = FastAPI(
+    lifespan=lifespan,
     title="PowerGuardian Pro API",
     version="0.1.0",
     description="Sistema de monitoreo y diagnostico de calidad de energia electrica"
@@ -23,6 +35,7 @@ app.include_router(parametros.router)
 app.include_router(mediciones.router)
 app.include_router(dashboard.router)
 app.include_router(incidencias.router)
+app.include_router(en_vivo.router)
 
 
 @app.get("/health")

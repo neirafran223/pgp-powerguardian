@@ -13,7 +13,7 @@ router = APIRouter(prefix="/parametros", tags=["Parametros Config"])
 def crear_parametros(data: ParametrosConfigCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
     existente = db.query(ParametrosConfig).filter(ParametrosConfig.equipo_id == data.equipo_id).first()
     if existente:
-        raise HTTPException(status_code=400, detail="Este equipo ya tiene parametros configurados")
+        raise HTTPException(status_code=400, detail="Este equipo ya tiene parámetros configurados")
     nuevo = ParametrosConfig(**data.model_dump())
     db.add(nuevo)
     db.commit()
@@ -25,7 +25,7 @@ def crear_parametros(data: ParametrosConfigCreate, db: Session = Depends(get_db)
 def obtener_parametros(equipo_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
     params = db.query(ParametrosConfig).filter(ParametrosConfig.equipo_id == equipo_id).first()
     if not params:
-        raise HTTPException(status_code=404, detail="Parametros no encontrados para este equipo")
+        raise HTTPException(status_code=404, detail="Parámetros no encontrados para este equipo")
     return params
 
 
@@ -33,7 +33,7 @@ def obtener_parametros(equipo_id: int, db: Session = Depends(get_db), user=Depen
 def actualizar_parametros(equipo_id: int, data: ParametrosConfigCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
     params = db.query(ParametrosConfig).filter(ParametrosConfig.equipo_id == equipo_id).first()
     if not params:
-        raise HTTPException(status_code=404, detail="Parametros no encontrados")
+        raise HTTPException(status_code=404, detail="Parámetros no encontrados")
     for key, value in data.model_dump().items():
         setattr(params, key, value)
     db.commit()

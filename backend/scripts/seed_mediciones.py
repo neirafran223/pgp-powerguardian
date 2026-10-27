@@ -19,10 +19,23 @@ token = login.json()["access_token"]
 headers = {"Authorization": f"Bearer {token}"}
 print("Token obtenido OK")
 
+equipos_response = requests.get(f"{BASE_URL}/equipos/", headers=headers)
+if equipos_response.status_code != 200:
+    print(f"Error al obtener equipos: {equipos_response.status_code} {equipos_response.text}")
+    exit(1)
+
+equipos = equipos_response.json()
+if not equipos:
+    print("No hay equipos. Crea un equipo antes de ejecutar el seed.")
+    exit(1)
+
+equipo_id = equipos[0]["id"]
+print(f"Usando equipo {equipo_id}: {equipos[0]['nombre']}")
+
 # 2. Configurar parametros (umbrales)
 print("Configurando umbrales...")
 params = {
-    "equipo_id": 2,
+    "equipo_id": equipo_id,
     "voltaje_max": 240,
     "voltaje_min": 210,
     "thd_max": 5.0,
@@ -33,8 +46,11 @@ params = {
 r = requests.post(f"{BASE_URL}/parametros/", json=params, headers=headers)
 if r.status_code in [200, 201]:
     print("Parametros creados OK")
+elif r.status_code == 400:
+    print("Parametros ya existen")
 else:
-    print(f"Parametros ya existen o error: {r.status_code}")
+    print(f"Error configurando parametros: {r.status_code} {r.text}")
+    exit(1)
 
 # 3. Enviar mediciones normales + anomalas
 print("Enviando mediciones...")
@@ -48,7 +64,7 @@ for i in range(50):
     if i < 35:
         # Mediciones normales
         medicion = {
-            "equipo_id": 2,
+            "equipo_id": equipo_id,
             "timestamp": ts.isoformat(),
             "voltaje_l1": round(random.uniform(218, 232), 1),
             "voltaje_l2": round(random.uniform(218, 232), 1),
@@ -65,7 +81,7 @@ for i in range(50):
     else:
         # Mediciones con anomalias
         medicion = {
-            "equipo_id": 2,
+            "equipo_id": equipo_id,
             "timestamp": ts.isoformat(),
             "voltaje_l1": round(random.uniform(245, 260), 1),
             "voltaje_l2": round(random.uniform(245, 260), 1),
@@ -84,6 +100,9 @@ for i in range(50):
     r = requests.post(f"{BASE_URL}/mediciones/", json=medicion, headers=headers)
     if r.status_code in [200, 201]:
         creadas += 1
+    else:
+        print(f"Error al enviar medicion {i + 1}: {r.status_code} {r.text}")
+        exit(1)
 
 print(f"Mediciones creadas: {creadas} ({anomalas} con anomalias)")
 

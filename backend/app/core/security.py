@@ -14,7 +14,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     if not payload:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token invalido o expirado"
+            detail="Token inválido o expirado"
         )
 
     user = db.query(Usuario).filter(Usuario.email == payload.get("sub")).first()

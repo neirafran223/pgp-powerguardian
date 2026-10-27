@@ -1,6 +1,9 @@
+from datetime import timedelta
 from sqlalchemy.orm import Session
 from app.models.incidencia import Incidencia
 from app.models.parametros_config import ParametrosConfig
+
+VENTANA_REPETICION = timedelta(seconds=60)
 
 
 def detectar_anomalias(db: Session, equipo_id: int, medicion) -> list[Incidencia]:
@@ -22,7 +25,7 @@ def detectar_anomalias(db: Session, equipo_id: int, medicion) -> list[Incidencia
                     timestamp=medicion.timestamp,
                     tipo="Sobrevoltaje",
                     nivel="critico",
-                    descripcion=f"Voltaje {fase} ({valor} V) supera maximo ({params.voltaje_max} V)",
+                    descripcion=f"Voltaje {fase} ({valor} V) supera el máximo ({params.voltaje_max} V)",
                     valor_medido=valor,
                     umbral_config=params.voltaje_max,
                 ))
@@ -36,7 +39,7 @@ def detectar_anomalias(db: Session, equipo_id: int, medicion) -> list[Incidencia
                     timestamp=medicion.timestamp,
                     tipo="Bajo Voltaje",
                     nivel="critico",
-                    descripcion=f"Voltaje {fase} ({valor} V) bajo minimo ({params.voltaje_min} V)",
+                    descripcion=f"Voltaje {fase} ({valor} V) bajo el mínimo ({params.voltaje_min} V)",
                     valor_medido=valor,
                     umbral_config=params.voltaje_min,
                 ))
@@ -49,7 +52,7 @@ def detectar_anomalias(db: Session, equipo_id: int, medicion) -> list[Incidencia
                 timestamp=medicion.timestamp,
                 tipo="THD Alto",
                 nivel=nivel,
-                descripcion=f"THD ({medicion.thd}%) supera maximo ({params.thd_max}%)",
+                descripcion=f"THD ({medicion.thd}%) supera el máximo ({params.thd_max}%)",
                 valor_medido=medicion.thd,
                 umbral_config=params.thd_max,
             ))
@@ -63,7 +66,7 @@ def detectar_anomalias(db: Session, equipo_id: int, medicion) -> list[Incidencia
                     timestamp=medicion.timestamp,
                     tipo="Sobrecorriente",
                     nivel="critico",
-                    descripcion=f"Corriente {fase} ({valor} A) supera maximo ({params.corriente_max} A)",
+                    descripcion=f"Corriente {fase} ({valor} A) supera el máximo ({params.corriente_max} A)",
                     valor_medido=valor,
                     umbral_config=params.corriente_max,
                 ))
@@ -75,10 +78,28 @@ def detectar_anomalias(db: Session, equipo_id: int, medicion) -> list[Incidencia
                 timestamp=medicion.timestamp,
                 tipo="Bajo Factor Potencia",
                 nivel="advertencia",
-                descripcion=f"FP ({medicion.factor_potencia}) bajo minimo ({params.factor_potencia_min})",
+                descripcion=f"FP ({medicion.factor_potencia}) bajo el mínimo ({params.factor_potencia_min})",
                 valor_medido=medicion.factor_potencia,
                 umbral_config=params.factor_potencia_min,
             ))
+
+    # Con mediciones cada segundo, la misma alarma se repetiria sin parar:
+    # se omite si ya hay una activa del mismo tipo para el equipo en la ventana reciente.
+    vistos = set()
+    nuevas = []
+    for inc in incidencias:
+        if inc.tipo in vistos:
+            continue
+        vistos.add(inc.tipo)
+        repetida = db.query(Incidencia.id).filter(
+            Incidencia.equipo_id == equipo_id,
+            Incidencia.tipo == inc.tipo,
+            Incidencia.estado == "activa",
+            Incidencia.timestamp >= medicion.timestamp - VENTANA_REPETICION,
+        ).first()
+        if not repetida:
+            nuevas.append(inc)
+    incidencias = nuevas
 
     for inc in incidencias:
         db.add(inc)

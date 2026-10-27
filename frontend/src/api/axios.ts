@@ -1,4 +1,5 @@
 import axios from "axios";
+import { cerrarSesion } from "./sesion";
 
 const api = axios.create({
   baseURL: "/api",
@@ -11,5 +12,14 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Sesion vencida o invalida: volver al login en vez de dejar la app sin datos
+api.interceptors.response.use(
+  (res) => res,
+  (error) => {
+    if (error.response?.status === 401 && !error.config?.url?.startsWith("/auth/")) cerrarSesion();
+    return Promise.reject(error);
+  },
+);
 
 export default api;
