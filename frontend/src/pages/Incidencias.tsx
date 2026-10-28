@@ -94,7 +94,10 @@ export default function Incidencias() {
 
   return (
     <Layout>
-      <div className="pgp-fade-in" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+      <div
+        className="pgp-fade-in"
+        style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+      >
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <label htmlFor="filtro-estado" style={{ fontSize: "13px", fontWeight: 600, color: "var(--txt2)" }}>
             Estado
@@ -105,10 +108,18 @@ export default function Incidencias() {
             onChange={(e) => setFiltroEstado(e.target.value)}
             style={{ padding: "5px 10px", background: "var(--bg-deep)", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--txt1)", fontSize: "13px", cursor: "pointer", outline: "none" }}
           >
-            <option value="todas" style={{ background: "var(--bg-deep)" }}>Todas</option>
-            <option value="activa" style={{ background: "var(--bg-deep)" }}>Activas</option>
-            <option value="reconocida" style={{ background: "var(--bg-deep)" }}>Reconocidas</option>
-            <option value="resuelta" style={{ background: "var(--bg-deep)" }}>Resueltas</option>
+            <option value="todas" style={{ background: "var(--bg-deep)" }}>
+              Todas
+            </option>
+            <option value="activa" style={{ background: "var(--bg-deep)" }}>
+              Activas
+            </option>
+            <option value="reconocida" style={{ background: "var(--bg-deep)" }}>
+              Reconocidas
+            </option>
+            <option value="resuelta" style={{ background: "var(--bg-deep)" }}>
+              Resueltas
+            </option>
           </select>
           <button onClick={() => fetchIncidencias()} style={{ padding: "5px 12px", background: "transparent", border: "1px solid var(--border2)", borderRadius: "4px", color: "var(--txt2)", fontSize: "12px", cursor: "pointer", fontWeight: 600 }}>
             Actualizar
@@ -118,7 +129,11 @@ export default function Incidencias() {
           </span>
         </div>
 
-        {loading && <div className="pgp-alert pgp-alert-info">Cargando incidencias...</div>}
+        {loading && (
+          <div className="pgp-alert pgp-alert-info">
+            Cargando incidencias...
+          </div>
+        )}
 
         {porTipo.length > 0 && (
           <div className="pgp-card">
@@ -139,14 +154,35 @@ export default function Incidencias() {
         )}
 
         {incidencias.length === 0 && !loading ? (
-          <div className="pgp-card" style={{ textAlign: "center", color: "var(--txt3)", padding: "40px" }}>
+          <div
+            className="pgp-card"
+            style={{
+              textAlign: "center",
+              color: "var(--txt3)",
+              padding: "40px",
+            }}
+          >
             No hay incidencias registradas con este filtro
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             {incidencias.map((inc) => (
-              <div key={inc.id} className="pgp-card" style={{ ...nivelStyle(inc.nivel), borderRadius: "6px", padding: "10px 14px" }}>
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+              <div
+                key={inc.id}
+                className="pgp-card"
+                style={{
+                  ...nivelStyle(inc.nivel),
+                  borderRadius: "6px",
+                  padding: "10px 14px",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    justifyContent: "space-between",
+                  }}
+                >
                   <div style={{ flex: 1 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
                       <span className={`pgp-dot ${inc.nivel === "critico" ? "pgp-dot-err" : "pgp-dot-warn"}`}></span>
@@ -156,12 +192,14 @@ export default function Incidencias() {
                     </div>
                     <p style={{ fontSize: "12px", color: "var(--txt2)", marginBottom: "4px", lineHeight: 1.4 }}>{inc.descripcion}</p>
                     <div style={{ display: "flex", gap: "16px", fontSize: "12px", color: "var(--txt3)" }}>
-                      <span>Medido: <span style={{ fontVariantNumeric: "tabular-nums", color: "var(--txt2)" }}>{inc.valor_medido}</span></span>
-                      <span>Umbral: <span style={{ fontVariantNumeric: "tabular-nums", color: "var(--txt2)" }}>{inc.umbral_config}</span></span>
+                      <span>Medido: <span style={{ fontVariantNumeric: "tabular-nums", color: "var(--txt2)" }}>{inc.valor_medido !== null ? Number(inc.valor_medido).toFixed(2) : "-"}</span></span>
+                      <span>Umbral: <span style={{ fontVariantNumeric: "tabular-nums", color: "var(--txt2)" }}>{inc.umbral_config !== null ? Number(inc.umbral_config).toFixed(2) : "-"}</span></span>
                       <span>{formatFecha(inc.timestamp)}</span>
                     </div>
                   </div>
-                  <div style={{ display: "flex", gap: "6px", marginLeft: "12px" }}>
+                  <div
+                    style={{ display: "flex", gap: "6px", marginLeft: "12px" }}
+                  >
                     {inc.estado === "activa" && (
                       <button onClick={() => cambiarEstado(inc.id, "reconocida")} style={{ padding: "4px 10px", fontSize: "12px", background: "transparent", border: "1px solid var(--warn)", borderRadius: "3px", color: "var(--warn)", cursor: "pointer", fontWeight: 600 }}>
                         Reconocer

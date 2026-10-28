@@ -2,7 +2,9 @@ import axios from "axios";
 import { cerrarSesion } from "./sesion";
 
 const api = axios.create({
-  baseURL: "/api",
+  // En producción (Vercel) usará la URL de Render.
+  // En local seguirá usando "/api" para que tu entorno de desarrollo no se rompa.
+  baseURL: import.meta.env.VITE_API_URL || "/api",
 });
 
 api.interceptors.request.use((config) => {

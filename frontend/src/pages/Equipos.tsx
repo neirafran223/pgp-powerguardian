@@ -77,7 +77,10 @@ export default function Equipos() {
 
   return (
     <Layout>
-      <div className="pgp-fade-in" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+      <div
+        className="pgp-fade-in"
+        style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+      >
         {error && <div className="pgp-alert pgp-alert-err">{error}</div>}
         {success && <div className="pgp-alert pgp-alert-ok">{success}</div>}
 
@@ -126,7 +129,9 @@ export default function Equipos() {
                 <input
                   type="text"
                   value={form.ubicacion}
-                  onChange={(e) => setForm({ ...form, ubicacion: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, ubicacion: e.target.value })
+                  }
                   style={inputStyle}
                   placeholder="Santiago, Chile"
                 />
@@ -138,7 +143,9 @@ export default function Equipos() {
                 <input
                   type="number"
                   value={form.cliente_id}
-                  onChange={(e) => setForm({ ...form, cliente_id: Number(e.target.value) })}
+                  onChange={(e) =>
+                    setForm({ ...form, cliente_id: Number(e.target.value) })
+                  }
                   min={1}
                   style={{ ...inputStyle, fontVariantNumeric: "tabular-nums" }}
                   required
@@ -153,9 +160,24 @@ export default function Equipos() {
                   onChange={(e) => setForm({ ...form, estado: e.target.value })}
                   style={{ ...inputStyle, cursor: "pointer" }}
                 >
-                  <option value="activo" style={{ background: "var(--bg-deep)" }}>Activo</option>
-                  <option value="inactivo" style={{ background: "var(--bg-deep)" }}>Inactivo</option>
-                  <option value="mantencion" style={{ background: "var(--bg-deep)" }}>En Mantencion</option>
+                  <option
+                    value="activo"
+                    style={{ background: "var(--bg-deep)" }}
+                  >
+                    Activo
+                  </option>
+                  <option
+                    value="inactivo"
+                    style={{ background: "var(--bg-deep)" }}
+                  >
+                    Inactivo
+                  </option>
+                  <option
+                    value="mantencion"
+                    style={{ background: "var(--bg-deep)" }}
+                  >
+                    En Mantencion
+                  </option>
                 </select>
               </div>
             </div>
@@ -193,7 +215,14 @@ export default function Equipos() {
             <tbody>
               {equipos.length === 0 ? (
                 <tr>
-                  <td colSpan={5} style={{ textAlign: "center", padding: "30px", color: "var(--txt3)" }}>
+                  <td
+                    colSpan={5}
+                    style={{
+                      textAlign: "center",
+                      padding: "30px",
+                      color: "var(--txt3)",
+                    }}
+                  >
                     No hay equipos registrados
                   </td>
                 </tr>
@@ -201,7 +230,9 @@ export default function Equipos() {
                 equipos.map((eq) => (
                   <tr key={eq.id}>
                     <td className="mono">{eq.id}</td>
-                    <td style={{ color: "var(--txt1)", fontWeight: 600 }}>{eq.nombre}</td>
+                    <td style={{ color: "var(--txt1)", fontWeight: 600 }}>
+                      {eq.nombre}
+                    </td>
                     <td>{eq.ubicacion || "-"}</td>
                     <td>
                       <span className={estadoBadge(eq.estado)}>
