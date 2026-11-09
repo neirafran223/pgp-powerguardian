@@ -1,0 +1,109 @@
+{
+    "modelo_version": "v1.0.0",
+    "fecha_entrenamiento": "2026-11-09T21:32:07.454973+00:00",
+    "total_muestras": 1200,
+    "feature_names": [
+        "voltaje_l1",
+        "voltaje_l2",
+        "voltaje_l3",
+        "corriente_l1",
+        "corriente_l2",
+        "corriente_l3",
+        "thd",
+        "frecuencia",
+        "factor_potencia",
+        "temperatura_gabinete",
+        "desbalance_voltaje_pct",
+        "desbalance_corriente_pct",
+        "desviacion_frecuencia",
+        "corriente_promedio"
+    ],
+    "parametros_iforest": {
+        "muestras_entrenamiento": 600,
+        "contamination": 0.05,
+        "n_estimators": 150,
+        "score_promedio_normal": 0.0603,
+        "score_minimo_normal": -0.0651,
+        "tasa_outliers_entrenamiento": 0.05
+    },
+    "metricas_clasificador": {
+        "accuracy": 1.0,
+        "f1_macro": 1.0,
+        "f1_weighted": 1.0,
+        "clases": [
+            "falla_critica",
+            "fp_bajo",
+            "normal",
+            "sobrecarga",
+            "thd_alto"
+        ],
+        "distribucion_clases": {
+            "falla_critica": 240,
+            "fp_bajo": 120,
+            "normal": 600,
+            "sobrecarga": 120,
+            "thd_alto": 120
+        },
+        "importancia_features": {
+            "voltaje_l1": 0.0815,
+            "voltaje_l2": 0.0531,
+            "voltaje_l3": 0.045,
+            "corriente_l1": 0.1023,
+            "corriente_l2": 0.0754,
+            "corriente_l3": 0.1049,
+            "thd": 0.1484,
+            "frecuencia": 0.0085,
+            "factor_potencia": 0.0868,
+            "temperatura_gabinete": 0.1216,
+            "desbalance_voltaje_pct": 0.0375,
+            "desbalance_corriente_pct": 0.0109,
+            "desviacion_frecuencia": 0.0085,
+            "corriente_promedio": 0.1157
+        },
+        "reporte_por_clase": {
+            "falla_critica": {
+                "precision": 1.0,
+                "recall": 1.0,
+                "f1-score": 1.0,
+                "support": 48.0
+            },
+            "fp_bajo": {
+                "precision": 1.0,
+                "recall": 1.0,
+                "f1-score": 1.0,
+                "support": 24.0
+            },
+            "normal": {
+                "precision": 1.0,
+                "recall": 1.0,
+                "f1-score": 1.0,
+                "support": 120.0
+            },
+            "sobrecarga": {
+                "precision": 1.0,
+                "recall": 1.0,
+                "f1-score": 1.0,
+                "support": 24.0
+            },
+            "thd_alto": {
+                "precision": 1.0,
+                "recall": 1.0,
+                "f1-score": 1.0,
+                "support": 24.0
+            },
+            "accuracy": 1.0,
+            "macro avg": {
+                "precision": 1.0,
+                "recall": 1.0,
+                "f1-score": 1.0,
+                "support": 240.0
+            },
+            "weighted avg": {
+                "precision": 1.0,
+                "recall": 1.0,
+                "f1-score": 1.0,
+                "support": 240.0
+            }
+        }
+    }
+}
