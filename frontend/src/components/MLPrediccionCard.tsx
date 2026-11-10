@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { obtenerRiesgoEquipo, RiesgoEquipoResponse } from "../api/ml";
+import { obtenerRiesgoEquipo } from "../api/ml";
+import type { RiesgoEquipoResponse } from "../api/ml";
 
 interface Props {
   equipoId: number;
