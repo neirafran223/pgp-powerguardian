@@ -1,5 +1,6 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
@@ -20,7 +21,11 @@ from app.services.detector_ml import (
     calcular_riesgo_falla,
     obtener_estado_modelo,
     cargar_modelos_desde_disco,
+    generar_diagnostico_detallado,
+    DIAGNOSTICOS_ELECTRICOS,
 )
+from app.services.reporte_excel import generar_reporte_excel
+from app.services.reporte_pdf import generar_reporte_pdf
 
 router = APIRouter(
     prefix="/ml",
@@ -84,7 +89,7 @@ def endpoint_predecir_equipo(
     if not cargar_modelos_desde_disco():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="El modelo ML aun no esta entrenado. Ejecute POST /ml/entrenar primero.",
+            detail="El sistema de analisis aun no esta activado.",
         )
 
     ultima_medicion = (
@@ -129,6 +134,26 @@ def endpoint_obtener_riesgo(
             equipo_id=equipo_id,
             ventana_n=ventana,
         )
+
+        # Obtener ultima medicion para generar diagnostico con valores reales
+        ultima_med = (
+            db.query(Medicion)
+            .filter(Medicion.equipo_id == equipo_id)
+            .order_by(desc(Medicion.timestamp))
+            .first()
+        )
+
+        diagnostico = None
+        if ultima_med:
+            diagnostico = generar_diagnostico_detallado(
+                clase_predicha=resultado_riesgo["clase_predominante_reciente"],
+                probabilidad=0.0,
+                riesgo_falla=resultado_riesgo["riesgo_falla"],
+                horizonte_min=resultado_riesgo["horizonte_estimado_min"],
+                medicion=ultima_med,
+            )
+
+        resultado_riesgo["diagnostico"] = diagnostico
         return RiesgoEquipoResponse(**resultado_riesgo)
     except RuntimeError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
@@ -169,3 +194,40 @@ def endpoint_historial_predicciones(
         .all()
     )
     return predicciones
+
+
+@router.get(
+    "/reporte/{equipo_id}",
+    status_code=status.HTTP_200_OK,
+    summary="Descargar reporte (Excel por defecto, o PDF) con incidencias, predicciones ML y mediciones",
+)
+def endpoint_descargar_reporte(
+    equipo_id: int,
+    formato: str = Query(
+        default="excel",
+        pattern="^(excel|pdf)$",
+        description="Formato del reporte: excel (xlsx) o pdf",
+    ),
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    try:
+        if formato == "pdf":
+            buffer = generar_reporte_pdf(db=db, equipo_id=equipo_id)
+            nombre_archivo = f"reporte_pgp_equipo_{equipo_id}.pdf"
+            media_type = "application/pdf"
+        else:
+            buffer = generar_reporte_excel(db=db, equipo_id=equipo_id)
+            nombre_archivo = f"reporte_pgp_equipo_{equipo_id}.xlsx"
+            media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+        return StreamingResponse(
+            buffer,
+            media_type=media_type,
+            headers={"Content-Disposition": f"attachment; filename={nombre_archivo}"},
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generando reporte: {str(exc)}",
+        )

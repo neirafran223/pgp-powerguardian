@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import useTema from "../hooks/useTema";
+import AlertaCritica from "./AlertaCritica";
 import {
   IconoArmonicos,
   IconoCompensacion,
@@ -13,6 +14,7 @@ import {
   IconoOnda,
   IconoPanel,
   IconoParametros,
+  IconoPredicciones,
   IconoSalir,
   IconoSol,
   IconoTendencias,
@@ -32,6 +34,7 @@ const navItems = [
   { label: "Cortocircuito / Protección", path: "/cortocircuito", group: "Compensación", icon: <IconoCortocircuito />, sub: "IEC 60909 · NFPA 70E · curvas de protección" },
   { label: "Equipos", path: "/equipos", group: "Gestión", icon: <IconoEquipos />, sub: "Registro y estado de los equipos monitoreados" },
   { label: "Incidencias", path: "/incidencias", group: "Alertas", icon: <IconoIncidencias />, sub: "Alertas detectadas y su seguimiento" },
+  { label: "Pronóstico de Fallas", path: "/predicciones", group: "Alertas", icon: <IconoPredicciones />, sub: "Historial de análisis, riesgo de falla y reportes para descargar" },
 ];
 
 export default function Layout({ children }: LayoutProps) {
@@ -136,6 +139,9 @@ export default function Layout({ children }: LayoutProps) {
             </button>
           </div>
         </header>
+
+        {/* Aviso de alerta critica: aparece en cualquier pagina del sistema */}
+        <AlertaCritica />
 
         <main className="pgp-content">{children}</main>
       </div>

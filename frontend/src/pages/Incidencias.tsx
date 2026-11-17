@@ -2,8 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import api from "../api/axios";
+import { descargarReporte } from "../api/ml";
+import type { FormatoReporte } from "../api/ml";
 import Layout from "../components/Layout";
 import useEnVivo from "../hooks/useEnVivo";
+import useMedicionEnVivo from "../hooks/useMedicionEnVivo";
 
 interface Incidencia {
   id: number;
@@ -26,6 +29,23 @@ export default function Incidencias() {
     ["activa", "reconocida", "resuelta"].includes(estadoInicial) ? estadoInicial : "todas",
   );
   const [loading, setLoading] = useState(false);
+  // Equipo activo compartido: los reportes se generan sobre el equipo seleccionado
+  const { equipoId } = useMedicionEnVivo();
+  const [descargando, setDescargando] = useState<FormatoReporte | null>(null);
+  const [errorReporte, setErrorReporte] = useState<string | null>(null);
+
+  const descargar = async (formato: FormatoReporte) => {
+    if (!equipoId || descargando) return;
+    setDescargando(formato);
+    setErrorReporte(null);
+    try {
+      await descargarReporte(equipoId, formato);
+    } catch {
+      setErrorReporte("No se pudo descargar el reporte. Intenta nuevamente.");
+    } finally {
+      setDescargando(null);
+    }
+  };
 
   const fetchIncidencias = (silencioso = false) => {
     if (!silencioso) setLoading(true);
@@ -124,10 +144,30 @@ export default function Incidencias() {
           <button onClick={() => fetchIncidencias()} style={{ padding: "5px 12px", background: "transparent", border: "1px solid var(--border2)", borderRadius: "4px", color: "var(--txt2)", fontSize: "12px", cursor: "pointer", fontWeight: 600 }}>
             Actualizar
           </button>
-          <span style={{ marginLeft: "auto", fontSize: "12px", color: "var(--txt3)" }}>
-            {incidencias.length} resultado(s)
-          </span>
+          <div style={{ marginLeft: "auto", display: "flex", gap: "8px", alignItems: "center" }}>
+            <button
+              onClick={() => descargar("excel")}
+              disabled={!equipoId || descargando !== null}
+              style={{ padding: "5px 12px", background: "var(--accent)", border: "none", borderRadius: "4px", color: "#fff", fontSize: "12px", cursor: equipoId && !descargando ? "pointer" : "not-allowed", fontWeight: 700, opacity: descargando ? 0.6 : 1 }}
+              title={equipoId ? `Reporte Excel del equipo #${equipoId}` : "Selecciona un equipo primero"}
+            >
+              {descargando === "excel" ? "Generando..." : "Descargar Excel"}
+            </button>
+            <button
+              onClick={() => descargar("pdf")}
+              disabled={!equipoId || descargando !== null}
+              style={{ padding: "5px 12px", background: "var(--accent)", border: "none", borderRadius: "4px", color: "#fff", fontSize: "12px", cursor: equipoId && !descargando ? "pointer" : "not-allowed", fontWeight: 700, opacity: descargando ? 0.6 : 1 }}
+              title={equipoId ? `Reporte PDF del equipo #${equipoId}` : "Selecciona un equipo primero"}
+            >
+              {descargando === "pdf" ? "Generando..." : "Descargar PDF"}
+            </button>
+            <span style={{ fontSize: "12px", color: "var(--txt3)" }}>
+              {incidencias.length} resultado(s)
+            </span>
+          </div>
         </div>
+
+        {errorReporte && <div className="pgp-alert pgp-alert-info">{errorReporte}</div>}
 
         {loading && (
           <div className="pgp-alert pgp-alert-info">

@@ -27,8 +27,170 @@ SCALER_IFOREST_PATH = ML_MODELS_DIR / "scaler_iforest.joblib"
 SCALER_RF_PATH = ML_MODELS_DIR / "scaler_rf.joblib"
 METADATA_PATH = ML_MODELS_DIR / "metadata_modelo.json"
 
-MODELO_VERSION = "v1.0.0"
+MODELO_VERSION = "v1.1.0"
 FRECUENCIA_NOMINAL_DEFAULT = 50.0
+
+# Base de conocimiento de diagnosticos electricos por clase de falla.
+# Cada clase incluye: descripcion tecnica, posibles consecuencias fisicas,
+# componentes en riesgo, y recomendacion de accion inmediata.
+DIAGNOSTICOS_ELECTRICOS = {
+    "normal": {
+        "titulo": "Operacion Normal",
+        "descripcion": "Todos los parametros electricos se encuentran dentro de los rangos establecidos por norma.",
+        "consecuencias": [],
+        "componentes_en_riesgo": [],
+        "accion_recomendada": "Mantener monitoreo continuo. Sin accion requerida.",
+        "norma_referencia": "IEEE 519 / IEC 61000-4-30",
+    },
+    "thd_alto": {
+        "titulo": "Distorsion Armonica Elevada (THD Alto)",
+        "descripcion": "La distorsion armonica total supera el umbral permitido, lo que indica presencia excesiva de armonicos en la red electrica.",
+        "consecuencias": [
+            "Sobrecalentamiento de transformadores y motores por perdidas adicionales en el hierro y cobre",
+            "Disparo falso de interruptores termomagneticos y relays de proteccion",
+            "Degradacion prematura del aislamiento de cables y bobinados",
+            "Errores de medicion en instrumentos analogicos y digitales",
+            "Resonancia armonica que puede amplificar corrientes y daniar capacitores",
+        ],
+        "componentes_en_riesgo": [
+            "Transformadores de distribucion",
+            "Bancos de capacitores (riesgo de explosion por resonancia)",
+            "Motores electricos (vibracion y calentamiento anormal)",
+            "Variadores de frecuencia (VFD)",
+            "Equipos electronicos sensibles (PLC, servidores)",
+        ],
+        "accion_recomendada": "Instalar filtros de armonicos pasivos o activos. Verificar cargas no lineales conectadas (rectificadores, UPS, VFD). Realizar estudio de calidad de energia segun IEEE 519.",
+        "norma_referencia": "IEEE 519-2022 (limites de distorsion armonica)",
+    },
+    "fp_bajo": {
+        "titulo": "Factor de Potencia Bajo",
+        "descripcion": "El factor de potencia esta por debajo del minimo aceptable, indicando consumo excesivo de potencia reactiva.",
+        "consecuencias": [
+            "Multas por parte de la compania electrica por bajo factor de potencia (bajo 0.93 en Chile)",
+            "Sobrecarga de cables y transformadores al transportar corriente reactiva improductiva",
+            "Caida de tension en la red interna que afecta arranque de motores",
+            "Aumento de perdidas por efecto Joule (I2R) en conductores",
+            "Reduccion de la capacidad util del sistema electrico",
+        ],
+        "componentes_en_riesgo": [
+            "Conductores electricos (sobrecalentamiento por exceso de corriente)",
+            "Transformadores de potencia (reduccion de vida util)",
+            "Interruptores automaticos (posible sobrecarga termica)",
+            "Tableros de distribucion",
+        ],
+        "accion_recomendada": "Instalar banco de capacitores para correccion de factor de potencia. Verificar motores sobredimensionados operando en vacio. Evaluar controlador automatico de reactivos.",
+        "norma_referencia": "SEC Chile (DS 327) / IEEE 1459",
+    },
+    "sobrecarga": {
+        "titulo": "Sobrecarga Electrica",
+        "descripcion": "La corriente consumida supera la capacidad nominal del equipo, provocando estres termico en conductores y protecciones.",
+        "consecuencias": [
+            "Sobrecalentamiento critico de cables que puede provocar incendios",
+            "Fusion de fusibles o disparo de interruptores automaticos",
+            "Degradacion acelerada del aislamiento por temperatura excesiva",
+            "Deformacion mecanica de barras de cobre en tableros",
+            "Falla en conexiones (puntos calientes por resistencia de contacto)",
+        ],
+        "componentes_en_riesgo": [
+            "Cables de alimentacion (riesgo de incendio si superan 90 C)",
+            "Interruptores termomagneticos (desgaste de contactos)",
+            "Contactores y reles (soldadura de contactos)",
+            "Bornes y conexiones atornilladas (puntos calientes)",
+            "Transformadores (acortamiento de vida util por regla de Montsinger)",
+        ],
+        "accion_recomendada": "Reducir carga inmediatamente. Verificar con termografia infrarroja los puntos de conexion. Redistribuir cargas entre fases. Evaluar ampliacion de capacidad del tablero.",
+        "norma_referencia": "NEC/NFPA 70 / IEC 60364",
+    },
+    "falla_critica": {
+        "titulo": "Falla Critica Inminente",
+        "descripcion": "Multiples parametros electricos estan fuera de rango simultaneamente, indicando una condicion de operacion peligrosa que puede derivar en falla catastrofica.",
+        "consecuencias": [
+            "Cortocircuito con arco electrico (riesgo de explosion y quemaduras)",
+            "Incendio en tablero electrico por sobrecalentamiento sostenido",
+            "Dano permanente a motores, transformadores y equipos de control",
+            "Interrupcion total del suministro electrico (blackout)",
+            "Riesgo de electrocucion para personal de mantenimiento",
+            "Dano a equipos electronicos sensibles conectados aguas abajo",
+        ],
+        "componentes_en_riesgo": [
+            "TODO el tablero electrico (riesgo de incendio)",
+            "Transformadores (falla de aislamiento, explosion)",
+            "Motores (quemado de bobinados)",
+            "Cables de potencia (carbonizacion del aislamiento)",
+            "Equipos de proteccion (superacion de capacidad de corte)",
+            "Personal cercano (riesgo de arco electrico - NFPA 70E)",
+        ],
+        "accion_recomendada": "DESCONECTAR EL EQUIPO DE INMEDIATO. Notificar al personal de mantenimiento electrico. No reconectar hasta realizar inspeccion visual y mediciones con megohmetro. Verificar termografia antes de reenergizar.",
+        "norma_referencia": "NFPA 70E (seguridad electrica) / IEC 60909 (corrientes de cortocircuito)",
+    },
+}
+
+
+def generar_diagnostico_detallado(
+    clase_predicha: str,
+    probabilidad: float,
+    riesgo_falla: float,
+    horizonte_min: int,
+    medicion: Any,
+) -> Dict[str, Any]:
+    """
+    Genera un diagnostico tecnico detallado basado en la clase predicha por el modelo ML
+    y los valores electricos actuales de la medicion. Incluye consecuencias fisicas,
+    componentes en riesgo y acciones recomendadas.
+    """
+    diag_base = DIAGNOSTICOS_ELECTRICOS.get(clase_predicha, DIAGNOSTICOS_ELECTRICOS["falla_critica"])
+
+    # Construir indicadores especificos basados en los valores reales de la medicion
+    indicadores_anomalos = []
+
+    thd = float(getattr(medicion, "thd", 0) or 0)
+    fp = float(getattr(medicion, "factor_potencia", 1) or 1)
+    v1 = float(getattr(medicion, "voltaje_l1", 220) or 220)
+    v2 = float(getattr(medicion, "voltaje_l2", 220) or 220)
+    v3 = float(getattr(medicion, "voltaje_l3", 220) or 220)
+    i1 = float(getattr(medicion, "corriente_l1", 0) or 0)
+    i2 = float(getattr(medicion, "corriente_l2", 0) or 0)
+    i3 = float(getattr(medicion, "corriente_l3", 0) or 0)
+    freq = float(getattr(medicion, "frecuencia", 50) or 50)
+    temp = float(getattr(medicion, "temperatura_gabinete", 25) or 25)
+
+    if thd > 5.0:
+        indicadores_anomalos.append(f"THD en {thd:.1f}% (limite recomendado: 5%)")
+    if fp < 0.90:
+        indicadores_anomalos.append(f"Factor de potencia en {fp:.3f} (minimo aceptable: 0.90)")
+    if max(v1, v2, v3) > 240:
+        indicadores_anomalos.append(f"Voltaje maximo detectado: {max(v1, v2, v3):.1f} V (limite: 240 V)")
+    if min(v1, v2, v3) < 210:
+        indicadores_anomalos.append(f"Voltaje minimo detectado: {min(v1, v2, v3):.1f} V (minimo: 210 V)")
+    if max(i1, i2, i3) > 100:
+        indicadores_anomalos.append(f"Corriente maxima detectada: {max(i1, i2, i3):.1f} A (limite: 100 A)")
+    if abs(freq - 50.0) > 0.5:
+        indicadores_anomalos.append(f"Frecuencia en {freq:.2f} Hz (nominal: 50.00 Hz)")
+    if temp > 45:
+        indicadores_anomalos.append(f"Temperatura gabinete en {temp:.1f} C (alerta sobre 45 C)")
+
+    # Desbalance de voltaje
+    v_prom = (v1 + v2 + v3) / 3.0
+    if v_prom > 0:
+        desbalance_v = (max(abs(v1 - v_prom), abs(v2 - v_prom), abs(v3 - v_prom)) / v_prom) * 100
+        if desbalance_v > 2.0:
+            indicadores_anomalos.append(f"Desbalance de voltaje: {desbalance_v:.1f}% (limite NEMA: 2%)")
+
+    return {
+        "titulo": diag_base["titulo"],
+        "descripcion": diag_base["descripcion"],
+        "consecuencias_posibles": diag_base["consecuencias"],
+        "componentes_en_riesgo": diag_base["componentes_en_riesgo"],
+        "accion_recomendada": diag_base["accion_recomendada"],
+        "norma_referencia": diag_base["norma_referencia"],
+        "indicadores_anomalos_actuales": indicadores_anomalos,
+        "severidad_general": (
+            "critica" if riesgo_falla >= 0.75
+            else "alta" if riesgo_falla >= 0.50
+            else "moderada" if riesgo_falla >= 0.20
+            else "baja"
+        ),
+    }
 
 # Nombres ordenados de las 14 features (10 originales + 4 derivadas)
 FEATURE_NAMES = [
@@ -427,7 +589,7 @@ def predecir_anomalia(medicion: Any, artefactos: Optional[Dict[str, Any]] = None
     if artefactos is None:
         artefactos = cargar_modelos_desde_disco()
     if not artefactos:
-        raise RuntimeError("Los modelos ML no estan entrenados aun.")
+        raise RuntimeError("El sistema de analisis aun no esta activado.")
 
     vector = extraer_features_medicion(medicion).reshape(1, -1)
     X_scaled = artefactos["scaler_if"].transform(vector)
@@ -455,7 +617,7 @@ def clasificar_estado(medicion: Any, artefactos: Optional[Dict[str, Any]] = None
     if artefactos is None:
         artefactos = cargar_modelos_desde_disco()
     if not artefactos:
-        raise RuntimeError("Los modelos ML no estan entrenados aun.")
+        raise RuntimeError("El sistema de analisis aun no esta activado.")
 
     vector = extraer_features_medicion(medicion).reshape(1, -1)
     X_scaled = artefactos["scaler_rf"].transform(vector)
@@ -514,7 +676,7 @@ def calcular_riesgo_falla(
     if artefactos is None:
         artefactos = cargar_modelos_desde_disco()
     if not artefactos:
-        raise RuntimeError("Los modelos ML no estan entrenados aun.")
+        raise RuntimeError("El sistema de analisis aun no esta activado.")
 
     mediciones_recientes = (
         db.query(Medicion)
@@ -680,6 +842,15 @@ def ejecutar_prediccion_completa(
     version = artefactos["metadata"].get("modelo_version", MODELO_VERSION)
     ts_medicion = getattr(medicion, "timestamp", None) or datetime.now(timezone.utc)
 
+    # Generar diagnostico tecnico detallado con consecuencias y acciones
+    diagnostico = generar_diagnostico_detallado(
+        clase_predicha=clase_final,
+        probabilidad=probabilidad_final,
+        riesgo_falla=res_riesgo["riesgo_falla"],
+        horizonte_min=res_riesgo["horizonte_estimado_min"],
+        medicion=medicion,
+    )
+
     nueva_prediccion = PrediccionML(
         equipo_id=equipo_id,
         timestamp=ts_medicion,
@@ -706,4 +877,5 @@ def ejecutar_prediccion_completa(
         "modelo_version": version,
         "es_anomalia_aislada": res_anomalia["es_anomalia"],
         "score_anomalia": res_anomalia["score_anomalia"],
+        "diagnostico": diagnostico,
     }

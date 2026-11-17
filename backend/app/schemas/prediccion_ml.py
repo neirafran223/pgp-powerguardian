@@ -3,6 +3,17 @@ from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, Field, ConfigDict
 
 
+class DiagnosticoDetallado(BaseModel):
+    titulo: str = Field(..., description="Nombre tecnico de la condicion detectada")
+    descripcion: str = Field(..., description="Explicacion tecnica de la condicion")
+    consecuencias_posibles: List[str] = Field(default_factory=list, description="Lista de posibles consecuencias fisicas si no se corrige")
+    componentes_en_riesgo: List[str] = Field(default_factory=list, description="Componentes electricos que pueden resultar danados")
+    accion_recomendada: str = Field(..., description="Accion inmediata sugerida para el personal tecnico")
+    norma_referencia: str = Field(..., description="Norma electrica de referencia (IEEE, IEC, NFPA)")
+    indicadores_anomalos_actuales: List[str] = Field(default_factory=list, description="Valores especificos fuera de rango en esta medicion")
+    severidad_general: str = Field(..., description="baja, moderada, alta, critica")
+
+
 class PrediccionMLBase(BaseModel):
     equipo_id: int
     timestamp: datetime
@@ -27,6 +38,10 @@ class PrediccionMLResponse(PrediccionMLBase):
         default=None,
         description="Puntaje continuo de anomalia entregado por Isolation Forest"
     )
+    diagnostico: Optional[DiagnosticoDetallado] = Field(
+        default=None,
+        description="Diagnostico tecnico detallado con consecuencias, componentes en riesgo y accion recomendada"
+    )
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -41,6 +56,10 @@ class RiesgoEquipoResponse(BaseModel):
     clase_predominante_reciente: str
     factores_contribuyentes: Dict[str, float]
     modelo_version: str
+    diagnostico: Optional[DiagnosticoDetallado] = Field(
+        default=None,
+        description="Diagnostico detallado basado en la clase predominante reciente"
+    )
 
 
 class EstadoModeloResponse(BaseModel):
