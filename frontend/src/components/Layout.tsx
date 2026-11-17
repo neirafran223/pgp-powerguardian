@@ -6,6 +6,7 @@ import AlertaCritica from "./AlertaCritica";
 import {
   IconoArmonicos,
   IconoCompensacion,
+  IconoContraer,
   IconoCortocircuito,
   IconoEquipos,
   IconoIncidencias,
@@ -42,6 +43,22 @@ export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const [tema, alternarTema] = useTema();
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const [contraido, setContraido] = useState(() => {
+    try {
+      return localStorage.getItem("menuContraido") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const alternarContraido = () =>
+    setContraido((c) => {
+      try {
+        localStorage.setItem("menuContraido", c ? "0" : "1");
+      } catch {
+        // sin almacenamiento: la preferencia dura solo esta sesion
+      }
+      return !c;
+    });
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -73,14 +90,11 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <div className="pgp-app">
       {menuAbierto && <div className="pgp-velo" onClick={() => setMenuAbierto(false)} />}
-      <aside className={`pgp-sidebar ${menuAbierto ? "abierto" : ""}`}>
+      <aside className={`pgp-sidebar ${menuAbierto ? "abierto" : ""} ${contraido ? "contraido" : ""}`}>
         <div className="pgp-brand">
+          <div className="pgp-brand-mini" aria-hidden="true">PGP</div>
           <div className="pgp-brand-name">PowerGuardian Pro</div>
           <div className="pgp-brand-sub">Gestión de calidad energética</div>
-          <div className="pgp-brand-ver">
-            <span className="pgp-dot pgp-dot-ok"></span> v1.0 · Operativo
-          </div>
-          <div className="pgp-brand-company">INDUC TECH</div>
         </div>
 
         <nav className="pgp-nav" aria-label="Navegación principal">
@@ -96,9 +110,11 @@ export default function Layout({ children }: LayoutProps) {
                   }}
                   className={`pgp-nav-item ${location.pathname === item.path ? "active" : ""}`}
                   aria-current={location.pathname === item.path ? "page" : undefined}
+                  title={contraido ? item.label : undefined}
+                  aria-label={item.label}
                 >
                   {item.icon}
-                  {item.label}
+                  <span className="pgp-nav-label">{item.label}</span>
                 </button>
               ))}
             </div>
@@ -106,8 +122,20 @@ export default function Layout({ children }: LayoutProps) {
         </nav>
 
         <div className="pgp-sidebar-footer">
-          <button className="pgp-sidebar-btn" onClick={logout}>
-            <IconoSalir /> Cerrar sesión
+          <div className="pgp-brand-ver">
+            <span className="pgp-dot pgp-dot-ok"></span> v1.0 · Operativo · INDUC TECH
+          </div>
+          <button
+            className="pgp-sidebar-btn pgp-contraer-btn"
+            onClick={alternarContraido}
+            aria-expanded={!contraido}
+            aria-label={contraido ? "Expandir menú" : "Contraer menú"}
+            title={contraido ? "Expandir menú" : undefined}
+          >
+            <IconoContraer /> <span className="pgp-nav-label">Contraer menú</span>
+          </button>
+          <button className="pgp-sidebar-btn" onClick={logout} title={contraido ? "Cerrar sesión" : undefined} aria-label="Cerrar sesión">
+            <IconoSalir /> <span className="pgp-nav-label">Cerrar sesión</span>
           </button>
         </div>
       </aside>

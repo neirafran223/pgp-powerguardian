@@ -1,14 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useEnVivo, { type CriticaVivo } from "../hooks/useEnVivo";
+import { IconoIncidencias, IconoSilencio, IconoVolumen } from "./Iconos";
 
 /**
- * Aviso emergente de alerta critica.
+ * Burbuja de alertas criticas (esquina inferior derecha, montada en el Layout).
  *
- * Escucha el evento "critica" del canal en vivo y muestra un banner fijo en la
- * parte superior de TODA la aplicacion (esta montado en el Layout), con sonido,
- * hasta que el usuario lo cierre. Pensado para lo que exige accion inmediata:
- * sobrevoltaje, bajo voltaje, sobrecorriente o THD muy alto.
+ * Escucha el evento "critica" del canal en vivo. No tapa la pagina: muestra un
+ * contador de alertas sin revisar y, al pulsarla, un panel con el detalle.
  */
 
 interface Aviso extends CriticaVivo {
@@ -18,10 +17,10 @@ interface Aviso extends CriticaVivo {
 // Mismo equipo + tipo no debe re-sonar cada segundo: el backend ya agrupa por
 // ventana de 60 s, aqui se agrega una demora extra para no atoscar al usuario.
 const DEMORA_REPETICION_MS = 120_000;
-const MAX_AVISOS = 3;
+const MAX_AVISOS = 20;
 
-function tonoCritico() {
-  // Dos pitidos cortos y agudos, sin archivos de audio
+function tonoSuave() {
+  // Un solo tono senoidal grave y bajo de volumen, sin archivos de audio
   try {
     const Ctx =
       window.AudioContext ||
@@ -30,22 +29,20 @@ function tonoCritico() {
     if (!Ctx) return;
     const ctx = new Ctx();
     const ahora = ctx.currentTime;
-    [0, 0.35].forEach((inicio) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "square";
-      osc.frequency.value = 880;
-      gain.gain.setValueAtTime(0.0001, ahora + inicio);
-      gain.gain.exponentialRampToValueAtTime(0.15, ahora + inicio + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, ahora + inicio + 0.25);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(ahora + inicio);
-      osc.stop(ahora + inicio + 0.3);
-    });
-    setTimeout(() => ctx.close(), 1200);
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = 523;
+    gain.gain.setValueAtTime(0.0001, ahora);
+    gain.gain.exponentialRampToValueAtTime(0.05, ahora + 0.04);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ahora + 0.6);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(ahora);
+    osc.stop(ahora + 0.65);
+    setTimeout(() => ctx.close(), 1000);
   } catch {
-    // Sin audio disponible: el banner igual aparece
+    // Sin audio disponible: la burbuja igual aparece
   }
 }
 
@@ -58,13 +55,27 @@ function formatoHora(iso: string | null) {
 
 export default function AlertaCritica() {
   const [avisos, setAvisos] = useState<Aviso[]>([]);
-  const [ultimoTono, setUltimoTono] = useState(0);
+  const [sinRevisar, setSinRevisar] = useState(0);
+  const [abierto, setAbierto] = useState(false);
+  const [silenciado, setSilenciado] = useState(() => {
+    try {
+      return localStorage.getItem("alertasSilenciadas") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const alternarSonido = () =>
+    setSilenciado((s) => {
+      try {
+        localStorage.setItem("alertasSilenciadas", s ? "0" : "1");
+      } catch {
+        // sin almacenamiento: la preferencia dura solo esta sesion
+      }
+      return !s;
+    });
   const navigate = useNavigate();
   const ultimosRef = useRef<Map<string, number>>(new Map());
-
-  const descartar = useCallback((id: string) => {
-    setAvisos((prev) => prev.filter((a) => a.id !== id));
-  }, []);
+  const ultimoTonoRef = useRef(0);
 
   useEnVivo({
     critica: (d) => {
@@ -74,84 +85,101 @@ export default function AlertaCritica() {
       if (ahora - ultimo < DEMORA_REPETICION_MS) return;
       ultimosRef.current.set(clave, ahora);
 
-      const aviso: Aviso = { ...d, id: `${clave}-${ahora}` };
-      setAvisos((prev) => [aviso, ...prev].slice(0, MAX_AVISOS));
+      setAvisos((prev) => [{ ...d, id: `${clave}-${ahora}` }, ...prev].slice(0, MAX_AVISOS));
+      if (!abierto) setSinRevisar((n) => n + 1);
 
       // Sonido: solo si la pestana esta visible y no acaba de sonar
-      if (document.visibilityState === "visible" && ahora - ultimoTono > 5_000) {
-        setUltimoTono(ahora);
-        tonoCritico();
+      if (!silenciado && document.visibilityState === "visible" && ahora - ultimoTonoRef.current > 5_000) {
+        ultimoTonoRef.current = ahora;
+        tonoSuave();
       }
     },
   });
 
-  // Cierra los avisos viejos solos a los 60 s (queda el registro en Incidencias)
   useEffect(() => {
-    if (avisos.length === 0) return;
-    const id = setTimeout(() => setAvisos([]), 60_000);
-    return () => clearTimeout(id);
-  }, [avisos]);
+    if (!abierto) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setAbierto(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [abierto]);
 
   if (avisos.length === 0) return null;
 
+  const alternar = () => {
+    setAbierto((a) => !a);
+    setSinRevisar(0);
+  };
+  const limpiar = () => {
+    setAvisos([]);
+    setSinRevisar(0);
+    setAbierto(false);
+  };
+
   return (
-    <div className="pgp-aviso-critico" role="alert" aria-live="assertive">
-      {avisos.map((a) => (
-        <div key={a.id} className="pgp-aviso-critico-item">
-          <div className="pgp-aviso-critico-pulso" aria-hidden="true" />
-          <div className="pgp-aviso-critico-cuerpo">
-            <div className="pgp-aviso-critico-titulo">
-              Alerta crítica — requiere acción inmediata
-              <span className="pgp-aviso-critico-hora">{formatoHora(a.timestamp)}</span>
-            </div>
-            <div className="pgp-aviso-critico-msg">
-              <strong>{a.equipo ?? `Equipo ${a.equipo_id}`}</strong>
-              {": "}
-              {a.descripcion ?? a.tipo}
-            </div>
-            <div className="pgp-aviso-critico-datos">
-              {a.valor_medido != null && (
-                <span>
-                  Valor medido: <strong>{a.valor_medido}</strong>
-                </span>
-              )}
-              {a.umbral != null && (
-                <span>
-                  Límite permitido: <strong>{a.umbral}</strong>
-                </span>
-              )}
-            </div>
+    <div className="pgp-burbuja">
+      {/* Anuncio para lectores de pantalla sin robar el foco */}
+      <span className="sr-only" aria-live="polite">
+        {sinRevisar > 0 ? `${sinRevisar} alerta(s) crítica(s) sin revisar` : ""}
+      </span>
+
+      {abierto && (
+        <div className="pgp-burbuja-panel pgp-card" role="dialog" aria-label="Alertas críticas">
+          <div className="pgp-burbuja-cab">
+            <span>Alertas críticas · {avisos.length}</span>
+            <button className="pgp-burbuja-texto" onClick={limpiar}>
+              Limpiar
+            </button>
           </div>
-          <div className="pgp-aviso-critico-acc">
+          <ul className="pgp-burbuja-lista">
+            {avisos.map((a) => (
+              <li key={a.id}>
+                <div className="pgp-burbuja-fila">
+                  <strong>{a.equipo ?? `Equipo ${a.equipo_id}`}</strong>
+                  <span className="pgp-burbuja-hora">{formatoHora(a.timestamp)}</span>
+                </div>
+                <div className="pgp-burbuja-msg">{a.descripcion ?? a.tipo}</div>
+                {(a.valor_medido != null || a.umbral != null) && (
+                  <div className="pgp-burbuja-datos">
+                    {a.valor_medido != null && <span>Medido: <strong>{a.valor_medido}</strong></span>}
+                    {a.umbral != null && <span>Límite: <strong>{a.umbral}</strong></span>}
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+          <div className="pgp-burbuja-pie">
             <button
-              style={{
-                padding: "6px 12px",
-                background: "var(--danger)",
-                border: "1px solid var(--danger)",
-                borderRadius: "4px",
-                color: "#fff",
-                fontSize: "12px",
-                fontWeight: 700,
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-              }}
+              className="pgp-burbuja-ver"
               onClick={() => {
-                setAvisos([]);
-                navigate("/incidencias");
+                setAbierto(false);
+                navigate("/incidencias?estado=activa");
               }}
             >
               Ver incidencias
             </button>
             <button
-              className="pgp-aviso-critico-cerrar"
-              onClick={() => descartar(a.id)}
-              aria-label="Cerrar aviso"
+              className="pgp-burbuja-sonido"
+              onClick={alternarSonido}
+              aria-pressed={silenciado}
+              aria-label={silenciado ? "Activar sonido de alertas" : "Silenciar sonido de alertas"}
+              title={silenciado ? "Activar sonido" : "Silenciar"}
             >
-              ✕
+              {silenciado ? <IconoSilencio /> : <IconoVolumen />}
             </button>
           </div>
         </div>
-      ))}
+      )}
+
+      <button
+        className="pgp-burbuja-btn"
+        onClick={alternar}
+        aria-expanded={abierto}
+        aria-label={`Alertas críticas: ${avisos.length}${sinRevisar ? `, ${sinRevisar} sin revisar` : ""}`}
+        title="Alertas críticas"
+      >
+        <IconoIncidencias />
+        {sinRevisar > 0 && <span className="pgp-burbuja-num">{sinRevisar > 9 ? "9+" : sinRevisar}</span>}
+      </button>
     </div>
   );
 }

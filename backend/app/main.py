@@ -46,6 +46,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],  # Permite todos los métodos HTTP (GET, POST, PUT, etc.)
     allow_headers=["*"],  # Permite todos los encabezados
+    expose_headers=["X-Total-Count"],  # total para la paginacion de incidencias (frontend en otro dominio)
 )
 
 @app.get("/health")

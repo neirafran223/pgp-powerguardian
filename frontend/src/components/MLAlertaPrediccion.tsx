@@ -1,169 +1,149 @@
-import React, { useEffect, useState } from "react";
-import { obtenerRiesgoEquipo } from "../api/ml";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { RiesgoEquipoResponse } from "../api/ml";
 
-interface Props {
-  equipoId: number;
-}
+const NIVEL_TONO: Record<string, string> = { bajo: "ok", moderado: "warn", alto: "err", critico: "err" };
 
-export const MLAlertaPrediccion: React.FC<Props> = ({ equipoId }) => {
-  const [riesgoData, setRiesgoData] = useState<RiesgoEquipoResponse | null>(
-    null,
-  );
-  const [loading, setLoading] = useState<boolean>(true);
-
-  useEffect(() => {
-    const cargarRiesgo = async () => {
-      try {
-        const data = await obtenerRiesgoEquipo(equipoId);
-        setRiesgoData(data);
-      } catch (err) {
-        console.error("Error al obtener el riesgo de falla", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    cargarRiesgo();
-    const intervalo = setInterval(cargarRiesgo, 10000);
-    return () => clearInterval(intervalo);
-  }, [equipoId]);
-
-  if (loading || !riesgoData) return null;
-
-  const esAlertaActiva = riesgoData.nivel_alerta !== "bajo";
-  const diag = riesgoData.diagnostico;
-
-  if (!esAlertaActiva) {
-    return (
-      <div className="mb-6 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-between text-sm">
-        <span className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-          Equipo operando en parámetros normales (Riesgo:{" "}
-          {(riesgoData.riesgo_falla * 100).toFixed(1)}%)
-        </span>
-        <span className="font-mono text-xs opacity-75">
-          {riesgoData.modelo_version}
-        </span>
-      </div>
-    );
-  }
-
-  const estilosAlerta =
-    {
-      moderado: "bg-yellow-500/15 border-yellow-500/40 text-yellow-300",
-      alto: "bg-orange-500/20 border-orange-500/50 text-orange-300",
-      critico: "bg-red-600/25 border-red-500 text-red-200 animate-pulse",
-    }[riesgoData.nivel_alerta] || "bg-gray-800 border-gray-700 text-gray-300";
+// Bloque propio de la prediccion ML en el panel principal, al lado de la franja de estado
+export function PanelPrediccion({ riesgo }: { riesgo: RiesgoEquipoResponse }) {
+  const [detalle, setDetalle] = useState(false);
+  // estable: el riesgo se refresca cada 10 s y el modal no debe re-enfocar Cerrar en cada refresco
+  const cerrarDetalle = useCallback(() => setDetalle(false), []);
+  const pct = Math.round(riesgo.riesgo_falla * 100);
+  const elevado = riesgo.nivel_alerta !== "bajo";
+  const tono = NIVEL_TONO[riesgo.nivel_alerta] ?? "warn";
 
   return (
-    <div
-      className={`mb-6 p-5 rounded-xl border shadow-2xl backdrop-blur-md transition-all duration-300 ${estilosAlerta}`}
-    >
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="flex items-start gap-3">
-          <div className="p-2 rounded-lg bg-black/40 border border-current text-xl">
-            {riesgoData.nivel_alerta === "critico" ? "!!" : "!"}
+    <section className={`pgp-estado pgp-estado-${tono} pgp-pred`} aria-label="Predicción de falla con Machine Learning">
+      <div className="pgp-pred-fila">
+        <div className="pgp-pred-riesgo">
+          <div className="pgp-pred-cab">
+            <span className="pgp-pred-titulo">Predicción ML</span>
+            <span className="pgp-estado-tag pgp-pred-nivel">{riesgo.nivel_alerta}</span>
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="font-bold uppercase tracking-wider text-sm">
-                Alerta de posible falla — {riesgoData.nivel_alerta}
-              </h3>
-              <span className="text-xs px-2 py-0.5 rounded font-mono bg-black/50 border border-current">
-                {(riesgoData.riesgo_falla * 100).toFixed(1)}% Riesgo
-              </span>
-            </div>
-            {diag ? (
-              <div className="mt-1">
-                <p className="text-xs font-semibold">
-                  {diag.titulo}
-                </p>
-                <p className="text-xs opacity-80 mt-0.5">
-                  {diag.descripcion.substring(0, 150)}
-                </p>
-                {diag.indicadores_anomalos_actuales.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {diag.indicadores_anomalos_actuales.slice(0, 3).map((ind, i) => (
-                      <span
-                        key={i}
-                        className="text-[10px] px-2 py-0.5 rounded-full bg-black/40 border border-current/30"
-                      >
-                        {ind}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <p className="text-xs opacity-90 mt-1">
-                Tendencia anomala detectada:{" "}
-                <strong className="uppercase underline">
-                  {riesgoData.clase_predominante_reciente}
-                </strong>
-              </p>
-            )}
+          <div className="pgp-pred-valor">
+            <span className="pgp-pred-pct">{pct} %</span>
+            <span className="pgp-pred-sub">riesgo de falla</span>
+          </div>
+          <div className="pgp-pred-barra" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label="Riesgo de falla">
+            <span style={{ width: `${pct}%` }} />
           </div>
         </div>
-
-        <div className="flex items-center gap-4 bg-black/40 px-4 py-2.5 rounded-lg border border-current/20 w-full md:w-auto justify-between">
-          <div className="text-right">
-            <span className="text-[10px] uppercase tracking-wider block opacity-75">
-              Tiempo hasta la falla
-            </span>
-            <span className="text-lg font-mono font-bold">
-              {riesgoData.horizonte_estimado_min !== null
-                ? `~${riesgoData.horizonte_estimado_min} min`
-                : "Inminente"}
-            </span>
-          </div>
+        <div className="pgp-pred-horizonte">
+          <span className="pgp-pred-sub">{elevado ? "Falla estimada" : "Sin falla anticipada"}</span>
+          <strong>
+            {elevado ? (riesgo.horizonte_estimado_min !== null ? `~${riesgo.horizonte_estimado_min} min` : "Inminente") : "Operación estable"}
+          </strong>
+          {elevado && <span className="pgp-pred-sub">hacia: {riesgo.clase_predominante_reciente}</span>}
+          <button className="pgp-pred-link" onClick={() => setDetalle(true)} aria-haspopup="dialog">
+            Detalle del modelo
+          </button>
         </div>
       </div>
-
-      {/* Accion recomendada visible directamente */}
-      {diag && (
-        <div className="mt-3 px-3 py-2 rounded-lg bg-cyan-500/10 border border-cyan-500/25 text-xs text-cyan-300">
-          <strong>Accion:</strong> {diag.accion_recomendada}
-        </div>
-      )}
-
-      <div className="mt-4 pt-3 border-t border-current/20 grid grid-cols-2 md:grid-cols-4 gap-2 text-xs opacity-90">
-        <div>
-          Deterioro:{" "}
-          <span className="font-mono font-bold">
-            {(
-              riesgoData.factores_contribuyentes.tendencia_degradacion * 100
-            ).toFixed(0)}
-            %
-          </span>
-        </div>
-        <div>
-          Severidad:{" "}
-          <span className="font-mono font-bold">
-            {(
-              riesgoData.factores_contribuyentes.severidad_isolation_forest *
-              100
-            ).toFixed(0)}
-            %
-          </span>
-        </div>
-        <div>
-          Lecturas anómalas:{" "}
-          <span className="font-mono font-bold">
-            {(
-              riesgoData.factores_contribuyentes.proporcion_anomala_ventana *
-              100
-            ).toFixed(0)}
-            %
-          </span>
-        </div>
-        <div>
-          Versión:{" "}
-          <span className="font-mono font-bold">
-            {riesgoData.modelo_version}
-          </span>
-        </div>
-      </div>
-    </div>
+      {detalle && <ModalPrediccion riesgo={riesgo} tono={tono} onClose={cerrarDetalle} />}
+    </section>
   );
-};
+}
+
+// Portal a body: dentro del panel, las animaciones con transform romperian el position: fixed
+function ModalPrediccion({ riesgo, tono, onClose }: { riesgo: RiesgoEquipoResponse; tono: string; onClose: () => void }) {
+  const cerrarRef = useRef<HTMLButtonElement>(null);
+  const pct = Math.round(riesgo.riesgo_falla * 100);
+  const elevado = riesgo.nivel_alerta !== "bajo";
+
+  useEffect(() => {
+    cerrarRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return createPortal(
+    <div className="pgp-modal-velo" onClick={onClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-prediccion-titulo"
+        onClick={(e) => e.stopPropagation()}
+        className={`pgp-card pgp-fade-in pgp-modal pgp-estado-${tono}`}
+      >
+        <header className="pgp-modal-cab">
+          <div>
+            <h2 id="modal-prediccion-titulo">Predicción de falla · Machine Learning</h2>
+            <p>Estimación sobre las últimas {riesgo.mediciones_analizadas} mediciones del equipo; no es una falla confirmada.</p>
+          </div>
+          <button ref={cerrarRef} onClick={onClose} className="pgp-modal-cerrar" aria-label="Cerrar detalle del modelo">
+            Cerrar
+          </button>
+        </header>
+
+        <div className="pgp-pred-fila">
+          <div className="pgp-pred-riesgo">
+            <div className="pgp-pred-cab">
+              <span className="pgp-pred-titulo">Riesgo de falla</span>
+              <span className="pgp-estado-tag pgp-pred-nivel">{riesgo.nivel_alerta}</span>
+            </div>
+            <span className="pgp-pred-pct">{pct} %</span>
+            <div className="pgp-pred-barra" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label="Riesgo de falla">
+              <span style={{ width: `${pct}%` }} />
+            </div>
+          </div>
+          <div className="pgp-pred-horizonte">
+            <span className="pgp-pred-sub">{elevado ? "Falla estimada" : "Sin falla anticipada"}</span>
+            <strong>
+              {elevado ? (riesgo.horizonte_estimado_min !== null ? `~${riesgo.horizonte_estimado_min} min` : "Inminente") : "Operación estable"}
+            </strong>
+            <span className="pgp-pred-sub">hacia: {riesgo.clase_predominante_reciente}</span>
+          </div>
+        </div>
+
+        {riesgo.diagnostico && (
+          <>
+            <h3 className="pgp-modal-sub">Diagnóstico</h3>
+            <p style={{ margin: "0 0 4px", fontWeight: 700, color: "var(--txt1)" }}>{riesgo.diagnostico.titulo}</p>
+            <p style={{ margin: 0, fontSize: "13px", color: "var(--txt2)" }}>{riesgo.diagnostico.descripcion}</p>
+            {riesgo.diagnostico.indicadores_anomalos_actuales.length > 0 && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
+                {riesgo.diagnostico.indicadores_anomalos_actuales.map((ind) => (
+                  <span key={ind} className="pgp-estado-tag">{ind}</span>
+                ))}
+              </div>
+            )}
+            <p className="pgp-alert pgp-alert-info" style={{ marginTop: "10px" }}>
+              <strong>Acción:</strong> {riesgo.diagnostico.accion_recomendada}
+            </p>
+          </>
+        )}
+
+        <h3 className="pgp-modal-sub">Factores del modelo</h3>
+        <DetallePrediccion riesgo={riesgo} />
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+function DetallePrediccion({ riesgo }: { riesgo: RiesgoEquipoResponse }) {
+  const f = riesgo.factores_contribuyentes;
+  const pct = (v: number) => `${(v * 100).toFixed(0)} %`;
+  const datos: [string, string][] = [
+    ["Clase predominante", riesgo.clase_predominante_reciente],
+    ["Deterioro", pct(f.tendencia_degradacion)],
+    ["Severidad", pct(f.severidad_isolation_forest)],
+    ["Lecturas anómalas", pct(f.proporcion_anomala_ventana)],
+    ["Prob. de falla instantánea", pct(f.probabilidad_falla_instantanea)],
+    ["Mediciones analizadas", String(riesgo.mediciones_analizadas)],
+    ["Versión del modelo", riesgo.modelo_version],
+  ];
+
+  return (
+    <dl className="pgp-estado-detalle">
+      {datos.map(([etiqueta, valor]) => (
+        <div key={etiqueta}>
+          <dt>{etiqueta}</dt>
+          <dd>{valor}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}

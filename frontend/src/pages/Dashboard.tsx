@@ -22,7 +22,8 @@ import {
 } from "../components/Iconos";
 import { tooltipStyle } from "../lib/calculos";
 import useEnVivo from "../hooks/useEnVivo";
-import { MLAlertaPrediccion } from "../components/MLAlertaPrediccion"; // <--- Importamos la alerta predictiva
+import { PanelPrediccion } from "../components/MLAlertaPrediccion";
+import useRiesgoML from "../hooks/useRiesgoML";
 
 interface EstadoGeneral {
   total_equipos: number;
@@ -86,6 +87,7 @@ export default function Dashboard() {
   });
   const [error, setError] = useState("");
   const [umbrales, setUmbrales] = useState<Umbrales | null>(null);
+  const riesgo = useRiesgoML(equipoId);
 
   useEffect(() => {
     api
@@ -250,44 +252,49 @@ export default function Dashboard() {
       >
         {error && <div className="pgp-alert pgp-alert-err">{error}</div>}
 
+        <div className={`pgp-estado-grid ${riesgo ? "con-prediccion" : ""}`}>
         {resumen?.equipo?.nombre && um?.timestamp && (
           <section
             className={`pgp-estado pgp-estado-${nivelFranja}`}
             aria-live="polite"
           >
-            <span className="pgp-estado-tag">
-              {nivelFranja === "err"
-                ? "Crítico"
-                : nivelFranja === "warn"
-                  ? "Atención"
-                  : "Normal"}
-            </span>
-            <div className="pgp-estado-txt">
-              <strong>
-                {resumen.equipo.nombre.trim()}:{" "}
-                {alertas.criticas > 0
-                  ? `${alertas.criticas} alertas críticas activas`
-                  : fueraDeLimite.length > 0
-                    ? "lecturas fuera de límite"
-                    : "operación normal, todos los parámetros dentro de rango"}
-              </strong>
-              <span>
-                {fueraDeLimite.length > 0
-                  ? `Ahora: ${fueraDeLimite.join(" · ")}`
-                  : "Ahora: todas las lecturas dentro de rango"}
+            <div className="pgp-estado-fila">
+              <span className="pgp-estado-tag">
+                {nivelFranja === "err"
+                  ? "Crítico"
+                  : nivelFranja === "warn"
+                    ? "Atención"
+                    : "Normal"}
               </span>
+              <div className="pgp-estado-txt">
+                <strong>
+                  {resumen.equipo.nombre.trim()}:{" "}
+                  {alertas.criticas > 0
+                    ? `${alertas.criticas} alertas críticas activas`
+                    : fueraDeLimite.length > 0
+                      ? "lecturas fuera de límite"
+                      : "operación normal, todos los parámetros dentro de rango"}
+                </strong>
+                <span>
+                  {fueraDeLimite.length > 0
+                    ? `Ahora: ${fueraDeLimite.join(" · ")}`
+                    : "Ahora: todas las lecturas dentro de rango"}
+                </span>
+              </div>
+              <div className="pgp-estado-acciones">
+                <button
+                  className="pgp-estado-btn"
+                  onClick={() => navigate("/incidencias?estado=activa")}
+                >
+                  Ver incidencias
+                </button>
+              </div>
             </div>
-            <button
-              className="pgp-estado-btn"
-              onClick={() => navigate("/incidencias?estado=activa")}
-            >
-              Ver incidencias
-            </button>
           </section>
         )}
+        {riesgo && <PanelPrediccion riesgo={riesgo} />}
+        </div>
 
-        {/* ALERTA PREDICTIVA DE MACHINE LEARNING */}
-        {equipoId && <MLAlertaPrediccion equipoId={equipoId} />}
 
         {/* Franja de KPIs */}
         <div className="pgp-kpi-row">

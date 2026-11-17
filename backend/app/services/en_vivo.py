@@ -15,7 +15,7 @@ from app.services.escenarios import ESCENARIOS, generar_mixto
 log = logging.getLogger("pgp.en_vivo")
 
 # ── Difusion de eventos a los clientes conectados (SSE) ──
-# shortcut: broker en memoria, solo sirve con un proceso de uvicorn; con varios workers usar Redis/pg NOTIFY.
+# Broker en memoria: solo sirve con un proceso de uvicorn; con varios workers usar Redis/pg NOTIFY.
 
 _suscriptores: set[asyncio.Queue] = set()
 _loop: asyncio.AbstractEventLoop | None = None
